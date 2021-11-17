@@ -1,5 +1,14 @@
+
+# sbt files
+target/
+project/project/+
+.bsp
+project/META-INF/
+
+# intellij files
+.idea
+out/
+
+# Scala files
 *.class
 *.log
-.idea/
-.bsp/
-target/
