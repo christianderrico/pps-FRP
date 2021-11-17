@@ -33,8 +33,8 @@ object e0GameOfLife extends App {
 
   val loop = Source.repeat(Iteration(0, List.empty)).throttle(1, FiniteDuration(1, SECONDS))
 
-  val NUMBER_OF_NEIGHBOURS = 8
-  val NEIGHBOURS_SQUARE_GRID_SIDE_LENGHT = 3
+  val NUMBER_OF_NEIGHBOURS = 9
+  val NEIGHBOURS_SQUARE_GRID_SIDE_LENGTH = 3
   val MINIMUM_OF_ALIVE_NEIGHBOURS = 2
   val MAXIMUM_OF_ALIVE_NEIGHBOURS = 3
   val ALIVE = 1
@@ -48,8 +48,8 @@ object e0GameOfLife extends App {
 
   def computeNeighbourCoordinates(cellIndex: Int, neighbourId: Int): CellCoordinates =
     CellCoordinates(
-      (cellIndex % width) + (neighbourId % NEIGHBOURS_SQUARE_GRID_SIDE_LENGHT) - 1,
-      (cellIndex / width) + (neighbourId / NEIGHBOURS_SQUARE_GRID_SIDE_LENGHT) - 1
+      (cellIndex % width) + (neighbourId % NEIGHBOURS_SQUARE_GRID_SIDE_LENGTH) - 1,
+      (cellIndex / width) + (neighbourId / NEIGHBOURS_SQUARE_GRID_SIDE_LENGTH) - 1
     )
 
   val gameLoop = RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
@@ -63,7 +63,7 @@ object e0GameOfLife extends App {
     val doGeneration = Flow[Iteration]
       .flatMapConcat(iteration =>
         Source(iteration.cells.indices).flatMapConcat(cellIndex => //for every cell
-          Source(0 to NUMBER_OF_NEIGHBOURS)
+          Source(0 until NUMBER_OF_NEIGHBOURS)
             .map(computeNeighbourCoordinates(cellIndex, _)) //get neighbours
             .filter(excludeNeighboursOutOfTheGrid) //exclude neighbours out of the grid
             .filter(neighbour => getCellIndex(neighbour) != cellIndex) //exclude cell itself
