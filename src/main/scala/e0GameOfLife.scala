@@ -1,0 +1,3 @@
+object e0GameOfLife {
+
+}
