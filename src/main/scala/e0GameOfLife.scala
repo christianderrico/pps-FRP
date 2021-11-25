@@ -1,3 +1,4 @@
+import akka.NotUsed
 import akka.actor.ActorSystem
 import akka.stream.ClosedShape
 import akka.stream.scaladsl.{Broadcast, Concat, Flow, GraphDSL, RunnableGraph, Sink, Source, ZipWith}
@@ -26,13 +27,6 @@ object e0GameOfLife extends App {
   val isAlive: Char => Int = c => if (c == '#') 1 else 0
   val initialState: Seq[Int] = initial.flatMap(v => Seq(v)).map(isAlive)
 
-  val printer = Sink.foreach[Iteration](i => {
-    println("GENERATION: " + i.generation)
-    Source(i.cells).map(c => if (c > 0) "#" else ".").grouped(width).map(s => "".concat(s)).runForeach(println(_))
-  })
-
-  val loop = Source.repeat(Iteration(0, List.empty)).throttle(1, FiniteDuration(1, SECONDS))
-
   val NUMBER_OF_NEIGHBOURS = 9
   val NEIGHBOURS_SQUARE_GRID_SIDE_LENGTH = 3
   val MINIMUM_OF_ALIVE_NEIGHBOURS = 2
@@ -55,7 +49,14 @@ object e0GameOfLife extends App {
   val gameLoop = RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
     import GraphDSL.Implicits._
 
-    val gateRight = b.add(ZipWith((_: Iteration, right: Iteration) => right))
+    val loop = Source.repeat().throttle(1, FiniteDuration(1, SECONDS))
+
+    val printer = Sink.foreach[Iteration](i => {
+      println("GENERATION: " + i.generation)
+      Source(i.cells).map(c => if (c > 0) "#" else ".").grouped(width).map(s => "".concat(s)).runForeach(println(_))
+    })
+
+    val gateRight = b.add(ZipWith((_:Unit, right: Iteration) => right))
     val broadcast = b.add(Broadcast[Iteration](2))
     val concat = b.add(Concat[Iteration]())
     val firstGenInjector = Source.single(Iteration(0, initialState))

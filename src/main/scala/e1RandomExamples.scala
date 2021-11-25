@@ -73,7 +73,7 @@ object e1RandomExamples extends App {
   publisher2.subscribe(OurSubscriber[Int]("First subscriber", println))
 
   println("Second subscription")
-  publisher2.subscribe(OurSubscriber[Int]("Second subscriber", v => println("Value: " + v)))*/
+  publisher2.subscribe(OurSubscriber[Int]("Second subscriber", v => println("Value: " + v)))
 
   //extended doOnNext method for debug and little DSL pimping Akka streams
   implicit class RichSource[In, M](val source: Source[In, M]) {
@@ -86,8 +86,8 @@ object e1RandomExamples extends App {
   def printStep[T](n: Int)(arg: T) = println(n + ") " + arg)
 
   val source = (Source(1 to 10) > printStep(1)
-    > printStep(2) >> (_ ** 2)
-    > printStep(3) !! (_ % 3 == 0) runForeach(println))
+                                > printStep(2) >> (_ ** 2)
+                                > printStep(3) !! (_ % 3 == 0) runForeach(println))
 
   //simple composition
   val source1 = Source(0 until 3)
