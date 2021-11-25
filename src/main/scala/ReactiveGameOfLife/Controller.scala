@@ -1,0 +1,5 @@
+package ReactiveGameOfLife
+
+object Controller {
+
+}

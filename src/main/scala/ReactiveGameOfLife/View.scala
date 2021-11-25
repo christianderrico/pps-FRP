@@ -3,16 +3,18 @@ package ReactiveGameOfLife
 import java.awt.{BorderLayout, Color, Dimension, FlowLayout, GridLayout, Toolkit}
 
 import ReactiveGameOfLife.View.Cell
+import Utilities.system
+import akka.stream.scaladsl.{Sink, Source}
 import cats.effect.IO
-import javax.swing.{BorderFactory, JButton, JFrame, JPanel, SwingUtilities, WindowConstants}
-
-import scala.concurrent.ExecutionContext
+import javax.swing.{BorderFactory, JButton, JFrame, JPanel, WindowConstants}
 
 case class View(rows: Int, columns: Int) {
 
   val SCREEN_SIZE: Dimension = Toolkit.getDefaultToolkit.getScreenSize
   val SCALE: Double = 1.5
   val TITLE = "Game of Life"
+  val START = "Start"
+  val STOP = "Stop"
 
   private lazy val frame: IO[JFrame] = for {
     frame <- IO(new JFrame())
@@ -26,8 +28,10 @@ case class View(rows: Int, columns: Int) {
     }
     mainPanel <- panel
     lowerPanel <- lowerPanel
-    _ <- IO(frame.getContentPane.add(mainPanel, BorderLayout.CENTER))
-    _ <- IO(frame.getContentPane.add(lowerPanel, BorderLayout.SOUTH))
+    _ <- IO {
+      frame.getContentPane.add(mainPanel, BorderLayout.CENTER)
+      frame.getContentPane.add(lowerPanel, BorderLayout.SOUTH)
+    }
   } yield frame
 
   private lazy val panel: IO[JPanel] = for {
@@ -39,12 +43,24 @@ case class View(rows: Int, columns: Int) {
     }
   } yield panel
 
+  private def changeText(currentText: String): String = if(currentText == START) STOP else START
+  private lazy val textChanger = Sink.foreach[JButton](btn => btn.setText(changeText(btn.getText)))
+  private lazy val inputPrinter = Sink.foreach[JButton](b => println(b.getText))
+
+  private def button(): IO[JButton] = for {
+    button <- IO(new JButton(START))
+    _ <- IO (button.addActionListener(_ => input.run().success(Some(button))))
+  } yield button
+
+  private lazy val input = Source.maybe[JButton].alsoTo(textChanger)
+                                                .to(inputPrinter)
+
   private lazy val lowerPanel: IO[JPanel] = for {
-    button <- IO(new JButton("START"))
     lowPanel <- IO(new JPanel())
+    startButton <- button()
     _ <- IO {
       lowPanel.setLayout(new FlowLayout())
-      lowPanel.add(BorderLayout.CENTER, button)
+      lowPanel.add(BorderLayout.CENTER, startButton)
     }
   } yield lowPanel
 
@@ -65,10 +81,7 @@ case class View(rows: Int, columns: Int) {
 }
 
 object View {
-
   case class Cell(i: Int, j: Int, button: JButton)
-
   def apply(rows: Int = 10, columns: Int = 10): View = new View(rows, columns)
-
 }
 
