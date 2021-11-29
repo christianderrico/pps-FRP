@@ -1,28 +1,34 @@
-import akka.actor.ActorSystem
-import akka.stream.scaladsl.{Sink, Source}
-import javax.swing.{AbstractButton, JButton, SwingUtilities}
+import java.awt.event.ActionEvent
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.FiniteDuration
+import ReactiveGameOfLife.View.{Signal, Start, Stop}
+import akka.actor.ActorSystem
+import javax.swing.{JButton, SwingUtilities}
+import monix.execution.Scheduler
+import monix.execution.cancelables.SingleAssignCancelable
+import monix.reactive.OverflowStrategy.{BackPressure, Unbounded}
+import monix.reactive.{Observable, OverflowStrategy}
+
+import scala.concurrent.{ExecutionContext, Future}
 
 package object Utilities {
 
   implicit val system: ActorSystem = ActorSystem("ActorPool")
 
-  val swingScheduler = new ExecutionContext {
+  val swingScheduler = Scheduler(new ExecutionContext {
     override def execute(runnable: Runnable): Unit = SwingUtilities.invokeAndWait(runnable)
     override def reportFailure(cause: Throwable): Unit = {}
-  }
+  })
 
   object Implicits {
 
-    implicit class richSource[In, M](source: Source[In, M]){
-      def doOnNext(f: In => Unit): Source[In, M] = source.map(elem => {f(elem); elem})
-      def >>=[T](f: In => T): Source[T, M] = source.map(f)
-    }
+    val bufferSize: Int = 100
 
-    implicit class richFiniteDuration(finiteTime: FiniteDuration){
-      val time = finiteTime._1;
+    implicit class richButton(button: JButton){
+      val liftedActionEvent: Observable[ActionEvent] =
+        Observable.create(OverflowStrategy.Fail(bufferSize)) { source =>
+          button.addActionListener(e => source.onNext(e))
+          SingleAssignCancelable()
+      }
     }
 
   }
