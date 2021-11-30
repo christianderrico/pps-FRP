@@ -1,4 +1,4 @@
-import ReactiveGameOfLife.GameOfLife.{Alive, Cell, Cells, Dead, GridDimension, Iteration, Position, Status}
+import ReactiveGameOfLife.GameOfLife.{Alive, Cell, Board, Dead, GridDimensions, Iteration, Position}
 import akka.actor.ActorSystem
 import akka.stream.ClosedShape
 import akka.stream.scaladsl.{Broadcast, Concat, Flow, GraphDSL, RunnableGraph, Sink, Source, ZipWith}
@@ -7,78 +7,90 @@ import scala.concurrent.duration.DurationInt
 
 object e0GameOfLife extends App {
 
-  implicit val gridDimension: GridDimension = GridDimension()
+  implicit val gridDimension: GridDimensions = GridDimensions()
 
   val initialBoard = ".........." +
                      ".........." +
                      ".........." +
                      ".........." +
                      "....###..." +
-                     "...###...." +
+                     "...##.#..." +
                      ".........." +
                      ".........." +
                      ".........." +
                      ".........."
 
-  val initialState: Cells = charToCell
+  val initialState: Board = initialBoardStringToCells()
 
-  private def charToCell: Seq[Cell] = {
+  private def initialBoardStringToCells(): Board = {
     import ReactiveGameOfLife.Utilities.Implicits._
-
-    def mapCellPositionToSingleValue(cell: Cell)(implicit gridDimension: GridDimension): Int =
-      cell.position.column + cell.position.row * gridDimension.columns
 
     val dead = initialBoard.getAllIndicesOf('.').map((_, Dead))
     val alive = initialBoard.getAllIndicesOf('#').map((_, Alive))
     (dead ++ alive).map(v => Cell(Position(v._1 / gridDimension.rows, v._1 % gridDimension.columns), v._2))
-                   .sortWith((a, b) => mapCellPositionToSingleValue(b) - mapCellPositionToSingleValue(a) > 0)
+                   .map(cell => cell.position -> cell.status)
+                   .toMap
 
   }
 
   val gameLoop = RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
     import GraphDSL.Implicits._
 
-    val loop = Source.repeat().throttle(1, 1.seconds)
+    val loopEngine = Source.repeat().throttle(1, 1.seconds)
 
     val printer = Sink.foreach[Iteration](i => {
+      def compareTwoPositions(pos1: Position, pos2: Position): Boolean = {
+        def map2DPositionTo1DValue(position: Position): Int =
+          position.row * gridDimension.rows + position.column
+
+        map2DPositionTo1DValue(pos1) < map2DPositionTo1DValue(pos2)
+      }
+
+
       println("GENERATION: " + i.generation)
-      Source(i.cells).map(cell => if(cell.status == Alive) "#" else ".")
-                     .grouped(gridDimension.rows)
-                     .map(s => "".concat(s))
-                     .runForeach(println(_))
+
+      Source(i.cells.toList.sortWith( (first, second) => (first, second) match {
+        case ((pos1, _), (pos2, _)) => compareTwoPositions(pos1, pos2)
+      })).map {
+        case (_, status) if status == Alive => "#"
+        case _ => "."
+      }.grouped(gridDimension.rows)
+       .map(s => "".concat(s))
+       .runForeach(println)
     })
 
-    val gateRight = b.add(ZipWith((_:Unit, right: Iteration) => right))
+    val zip = b.add(ZipWith((_:Unit, right: Iteration) => right))
     val outputPorts: Int = 2
     val broadcast = b.add(Broadcast[Iteration](outputPorts))
     val concat = b.add(Concat[Iteration]())
     val firstGenInjector = Source.single(Iteration(0, initialState))
 
-    import GameUtilities._
+    import ReactiveGameOfLife.GameOfLifeOperations._
 
     val doGeneration =
       Flow[Iteration].flatMapConcat(iteration =>
-        Source(iteration.cells).flatMapConcat(referenceCell => //for every cell
-          Source(computeNeighboursPositionOf(referenceCell.position)) //get all possible neighbours
-            .filter(excludeNeighboursPositionsOutOfTheGrid) //exclude neighbours out of the grid
-            .filter(exclude(referenceCell.position)) //exclude cell itself
-            .fold(0)((nOfAliveNeigh, neighPos) => nOfAliveNeigh + countAliveNeighbourIteration(iteration, neighPos))
-            .map(nOfAliveNeighbours => applyGameOfLifeRulesBy(nOfAliveNeighbours, referenceCell))
-        ).grouped(gridDimension.rows * gridDimension.columns)
-         .map(newCellsStatus =>
+        Source(iteration.cells).flatMapConcat {
+          case (cellPosition, cellStatus) =>
+            Source(getNeighboursPositions(cellPosition)(gridDimension)) //get all possible neighbours
+              .fold(0)((nOfAliveNeigh, neighbourPosition) =>
+                nOfAliveNeigh + (if (iteration.cells(neighbourPosition) == Alive) 1 else 0 ) )
+              .map(nOfAliveNeighbours => applyGameOfLifeRulesBy(nOfAliveNeighbours, cellStatus))
+        }
+        .grouped(gridDimension.rows * gridDimension.columns)
+        .map(newCellsStatus =>
            Iteration(
              iteration.generation + 1,
              iteration.cells.zip(newCellsStatus).map {
-               case (previousCell, newStatus) => Cell(previousCell.position, newStatus)
-             }
+               case (previousCell, newStatus) => previousCell._1 -> newStatus
+             }.toMap
            )
          )
       )
 
 
-    loop ~> gateRight.in0
-    gateRight.out ~> broadcast ~> printer
-    gateRight.in1 <~ concat <~ firstGenInjector
+    loopEngine ~> zip.in0
+    zip.out ~> broadcast ~> printer
+    zip.in1 <~ concat <~ firstGenInjector
                      concat <~ doGeneration <~ broadcast
 
     ClosedShape
@@ -86,37 +98,5 @@ object e0GameOfLife extends App {
 
   implicit val system: ActorSystem = ActorSystem("QuickStart")
   gameLoop.run()
-
-}
-
-object GameUtilities {
-
-  val MINIMUM_OF_ALIVE_NEIGHBOURS = 2
-  val MAXIMUM_OF_ALIVE_NEIGHBOURS = 3
-
-  def excludeNeighboursPositionsOutOfTheGrid(position: Position)(implicit gridDimension: GridDimension): Boolean =
-    (position.row >= 0 && position.row < gridDimension.rows) && (position.column >= 0 && position.column < gridDimension.columns)
-
-  def computeNeighboursPositionOf(referenceCell: Position): Seq[Position] = {
-    for(
-      offsetX: Int <- -1 to 1;
-      offsetY: Int <- -1 to 1
-    ) yield Position(referenceCell.row + offsetX, referenceCell.column + offsetY)
-  }
-
-  def exclude(referenceCell: Position)(neighbour: Position): Boolean = referenceCell != neighbour
-
-  def countAliveNeighbourIteration(iteration: Iteration, neighbourPosition: Position): Int =
-    iteration.cells.find(_.position == neighbourPosition) match {
-      case Some(existentNeighbour) if existentNeighbour.status == Alive => 1
-      case _ => 0
-    }
-
-  def applyGameOfLifeRulesBy(nOfAliveNeighbours: Int, referenceCell: Cell): Status =
-    (nOfAliveNeighbours, referenceCell) match {
-      case (n, _) if n < MINIMUM_OF_ALIVE_NEIGHBOURS || n > MAXIMUM_OF_ALIVE_NEIGHBOURS => Dead
-      case (n, cell) if n == MAXIMUM_OF_ALIVE_NEIGHBOURS || cell.status == Alive => Alive
-      case _ => Dead
-  }
 
 }

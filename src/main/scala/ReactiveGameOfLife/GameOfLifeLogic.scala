@@ -1,0 +1,5 @@
+package ReactiveGameOfLife
+
+class GameOfLifeLogic {
+
+}
