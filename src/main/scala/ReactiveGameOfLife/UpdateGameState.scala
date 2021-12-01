@@ -1,8 +1,30 @@
 package ReactiveGameOfLife
 
+import ReactiveGameOfLife.Controller.{Signal, StartSignal, StopSignal}
+import monix.reactive.Observable
 import ReactiveGameOfLife.GameOfLife.{Alive, Dead, GridDimensions, Position, Status}
 
-object GameOfLifeLogic {
+import scala.concurrent.duration.DurationInt
+
+object Model {
+
+  private def identity(init: Int): Observable[Int] =
+    Observable(init)
+
+  private def update(init: Int): Observable[Int] =
+    Observable(init).map(_ + 1)
+
+  def apply(tick: (Signal, Int)): Observable[Int] = {
+    println(tick._1)
+    tick match {
+      case (StartSignal, value) => update(value)
+      case (StopSignal, value) => identity(value)
+    }
+  }
+
+}
+
+object ModelOps {
 
   def getNeighboursPositions(referenceCell: Position)(gridDimensions: GridDimensions): Seq[Position] = {
     def areCoordinatesLegal(row: Int, column: Int): Boolean =
