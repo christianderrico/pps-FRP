@@ -2,29 +2,45 @@ package ReactiveGameOfLife
 
 import ReactiveGameOfLife.Controller.{Signal, StartSignal, StopSignal}
 import monix.reactive.Observable
-import ReactiveGameOfLife.GameOfLife.{Alive, Dead, GridDimensions, Position, Status}
+import ReactiveGameOfLife.GameOfLife.{Alive, Dead, Generation, GridDimensions, Position, Status}
 
 import scala.concurrent.duration.DurationInt
 
-object Model {
+object UpdateGameState {
 
-  private def identity(init: Int): Observable[Int] =
-    Observable(init)
+  private def identity: Observable[GameOfLife] = Observable.empty[GameOfLife]
 
-  private def update(init: Int): Observable[Int] =
-    Observable(init).map(_ + 1)
+  import ReactiveGameOfLife.UpdateOps._
 
-  def apply(tick: (Signal, Int)): Observable[Int] = {
-    println(tick._1)
-    tick match {
-      case (StartSignal, value) => update(value)
-      case (StopSignal, value) => identity(value)
+  private def update(previousGeneration: GameOfLife): Observable[GameOfLife] = {
+    def getStatus(position: Position): Status = previousGeneration.cells(position)
+
+    val rows = GameOfLife.gridDimensions.rows
+    val columns = GameOfLife.gridDimensions.columns
+
+    Observable.fromIterable(previousGeneration.cells)
+      .mergeMap {
+        case position -> status =>
+          Observable.fromIterable(getNeighboursPositions(position)(GameOfLife.gridDimensions))
+            .foldLeft(0)((nOfAliveNeighbours, neighbourPosition) =>
+              nOfAliveNeighbours + (if (getStatus(neighbourPosition) == Alive) 1 else 0))
+            .map(nAliveNeighbours => applyGameOfLifeRulesBy(nAliveNeighbours, status))
+      }
+      .bufferTumbling(rows * columns)
+      .map(getNextGeneration(previousGeneration))
+      .sample(300.millis)
+  }
+
+  def apply(tickUpdate: (Signal, GameOfLife)): Observable[GameOfLife] = {
+    tickUpdate match {
+      case (StartSignal, iteration) => update(iteration)
+      case (StopSignal, _) => identity
     }
   }
 
 }
 
-object ModelOps {
+object UpdateOps {
 
   def getNeighboursPositions(referenceCell: Position)(gridDimensions: GridDimensions): Seq[Position] = {
     def areCoordinatesLegal(row: Int, column: Int): Boolean =
@@ -51,4 +67,11 @@ object ModelOps {
       case _ => Dead
     }
 
+  def getNextGeneration(previous: GameOfLife)(newCellsStatus: Seq[Status]): Generation =
+    Generation(
+      previous.generationNumber + 1,
+      previous.cells.zip(newCellsStatus).map {
+        case ((previousPosition, _), newStatus) => previousPosition -> newStatus
+      }.toMap
+    )
 }

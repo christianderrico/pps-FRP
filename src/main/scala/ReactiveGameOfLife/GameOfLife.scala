@@ -1,17 +1,28 @@
 package ReactiveGameOfLife
 
-object GameOfLife {
+import ReactiveGameOfLife.Generation.Board
 
-  type Cells = Seq[Int]
+sealed trait Generation {
+  val cells: Board
+  val generation: Int
+}
 
-  val defaultWidth: Int = 10
-  val defaultHeight: Int = 10
+object Generation {
 
-  case class Iteration(generation: Int, cells: Cells)
-  case class Position(row: Int, column: Int) {
-    private def convertToIndex(width: Int = defaultWidth): Int = row + column * width
-    val toCellsIndex = convertToIndex()
-  }
+  case class Generation(generation: Int, cells: Board) extends Generation
+
+  type Board = Map[Position, Status]
+
+  trait Status
+  case object Alive extends Status
+  case object Dead extends Status
+
+  case class Position(row: Int, column: Int)
+
+  val defaultRows: Int = 10
+  val defaultColumns: Int = 10
+
+  case class GridDimensions(rows: Int = defaultRows, columns: Int = defaultColumns)
 
 }
 
