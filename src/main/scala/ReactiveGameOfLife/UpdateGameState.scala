@@ -1,41 +1,42 @@
 package ReactiveGameOfLife
 
-import ReactiveGameOfLife.Controller.{Signal, StartSignal, StopSignal}
 import monix.reactive.Observable
 import ReactiveGameOfLife.GameOfLife.{Alive, Dead, Generation, GridDimensions, Position, Status}
 
-import scala.concurrent.duration.DurationInt
-
 object UpdateGameState {
 
-  private def identity: Observable[GameOfLife] = Observable.empty[GameOfLife]
+  trait ModelInput
+  case class UpdateRequest(currentState: GameOfLife) extends ModelInput
+  case object StopRequest extends ModelInput
 
   import ReactiveGameOfLife.UpdateOps._
 
+  private def identity: Observable[GameOfLife] = Observable.empty[GameOfLife]
+
   private def update(previousGeneration: GameOfLife): Observable[GameOfLife] = {
-    def getStatus(position: Position): Status = previousGeneration.cells(position)
+    def countIfAlive(position: Position): Int = previousGeneration.cells(position) match {
+      case Alive => 1
+      case _ => 0
+    }
 
     val rows = GameOfLife.gridDimensions.rows
     val columns = GameOfLife.gridDimensions.columns
 
     Observable.fromIterable(previousGeneration.cells)
       .mergeMap {
-        case position -> status =>
+        case (position, status) =>
           Observable.fromIterable(getNeighboursPositions(position)(GameOfLife.gridDimensions))
-            .foldLeft(0)((nOfAliveNeighbours, neighbourPosition) =>
-              nOfAliveNeighbours + (if (getStatus(neighbourPosition) == Alive) 1 else 0))
+            .foldLeft(0)((nAlive, neighbourPosition) => nAlive + countIfAlive(neighbourPosition))
             .map(nAliveNeighbours => applyGameOfLifeRulesBy(nAliveNeighbours, status))
       }
       .bufferTumbling(rows * columns)
-      .map(getNextGeneration(previousGeneration))
-      .sample(300.millis)
+      .map(newStatus => getNextGeneration(previousGeneration)(newStatus))
+      .sample(GameOfLife.INTERVAL_BETWEEN_GENERATION)
   }
 
-  def apply(tickUpdate: (Signal, GameOfLife)): Observable[GameOfLife] = {
-    tickUpdate match {
-      case (StartSignal, iteration) => update(iteration)
-      case (StopSignal, _) => identity
-    }
+  def apply(updateRequest: ModelInput): Observable[GameOfLife] = updateRequest match {
+    case req: UpdateRequest => update(req.currentState)
+    case StopRequest => identity
   }
 
 }
