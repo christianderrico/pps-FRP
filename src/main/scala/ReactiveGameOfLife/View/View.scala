@@ -1,28 +1,27 @@
-package ReactiveGameOfLife
+package ReactiveGameOfLife.View
 
 import java.awt.event.ActionEvent
-import java.awt.{BorderLayout, Color, Dimension, FlowLayout, GridLayout, Toolkit}
+import java.awt._
 
 import ReactiveGameOfLife.GameOfLife.GridDimensions
-import ReactiveGameOfLife.View.{Output, Scene}
-import Utilities.Implicits.{RichButton, RichObservable, RichTextField}
-import Utilities.swingScheduler
-import akka.stream.impl.QueueSource.Input
+import ReactiveGameOfLife.Utilities.Implicits.{ObjectLiftable, RichButton, RichTextField}
+import ReactiveGameOfLife.Utilities.swingScheduler
 import javax.swing.border.Border
-import javax.swing.{BorderFactory, JButton, JFrame, JLabel, JPanel, JTextField, WindowConstants}
+import javax.swing._
 import monix.eval.Task
 import monix.reactive.Observable
 
 object View {
 
-  trait Output {
+  trait ViewInput {
     type ButtonCoordinates = (Int, Int)
     type BoardToDraw = Map[ButtonCoordinates, Color]
-    val generationCount: Int
-    val tiles: BoardToDraw
+    def generationCount: Int
+    def tiles: BoardToDraw
   }
 
-  type Input = (ActionCommand, Seq[Tile], Int)
+  trait ViewOutput
+  case class CycleComputationRequest(cmd: ActionCommand, tiles: Seq[Tile], genNumber: Int) extends ViewOutput
 
   case class Tile(row: Int, column: Int, button: JButton)
 
@@ -36,28 +35,22 @@ object View {
   private val GENERATION_LABEL_TEXT = "Generation: "
   private val FIRST_GENERATION = "0"
 
-  trait ActionCommand
-  case object Start extends ActionCommand
-  case object Stop extends ActionCommand
+  type ActionCommand = String
 
-  private val START = Start.toString
-  private val STOP = Stop.toString
-
-  implicit def stringToActionCommand(cmd: String): ActionCommand = cmd match {
-    case START => Start
-    case _ => Stop
-  }
+  val START: ActionCommand = "Start"
+  val STOP: ActionCommand = "Stop"
 
   def getEmptyBorderFromOneSize(pxDimension: Int): Border =
     BorderFactory.createEmptyBorder(pxDimension, pxDimension, pxDimension, pxDimension)
 }
 
-case class View(dimension: GridDimensions) extends Scene[Output, View.Input] {
+import View._
+case class View(dimension: GridDimensions) extends Scene[ViewInput, ViewOutput] {
 
   import View._
 
   private lazy val frame: Task[JFrame] = for {
-    frame <- Task(new JFrame())
+    frame <- new JFrame().liftToTask
     screenWidth <- Task((SCREEN_SIZE.width / SCALE).toInt)
     screenHeight <- Task((SCREEN_SIZE.height / SCALE).toInt)
     _ <- Task {
@@ -75,7 +68,7 @@ case class View(dimension: GridDimensions) extends Scene[Output, View.Input] {
   } yield frame
 
   private lazy val mainPanel: Task[JPanel] = for {
-    panel <- Task(new JPanel())
+    panel <- new JPanel().liftToTask
     _ <- Task {
       panel.setBorder(BorderFactory.createLineBorder(Color.gray))
       panel.setLayout(new GridLayout(dimension.rows, dimension.columns))
@@ -84,7 +77,7 @@ case class View(dimension: GridDimensions) extends Scene[Output, View.Input] {
   } yield panel
 
   private lazy val textPanel: Task[JPanel] = for {
-    panel <- Task(new JPanel())
+    panel <- new JPanel().liftToTask
     textField <- Task(textField)
     _ <- Task {
       val columns = 6
@@ -101,8 +94,8 @@ case class View(dimension: GridDimensions) extends Scene[Output, View.Input] {
   } yield panel
 
   private lazy val lowerPanel: Task[JPanel] = for {
-    lowPanel <- Task(new JPanel())
-    switch <- Task(switch)
+    lowPanel <- new JPanel().liftToTask
+    switch <- switch.liftToTask
     genPanel <- textPanel
     _ <- Task {
       lowPanel.setLayout(new BorderLayout())
@@ -126,13 +119,12 @@ case class View(dimension: GridDimensions) extends Scene[Output, View.Input] {
     switch.ActionEventAsObservable.doOnNext(executeOnActionCommand).map(_.getActionCommand)
 
   private lazy val tilesInput: Observable[Seq[Tile]] =
-    Observable.combineLatestList(tiles.map(tile => Observable(tile) ++ buttonsPressedInput(tile)) : _*)
+    Observable.combineLatestList(tiles.map(tile => tile.liftToObservable ++ onPressedAsObservable(tile)) : _*)
 
   private lazy val labelInput: Observable[Int] =
-    Observable(textField.getText toInt).debug(v => println("on start " + v)) ++
-      textField.onTextChangeAsObservable.map(_.toInt).debug(v => println ("on change " + v))
+    textField.getText.toInt.liftToObservable ++ textField.onTextChangeAsObservable.map(_.toInt)
 
-  private def buttonsPressedInput(tile: Tile): Observable[Tile] =
+  private def onPressedAsObservable(tile: Tile): Observable[Tile] =
     tile.button.ActionEventAsObservable
       .doOnNext(_ => paintButton(tile.button))
       .map(_ => tile)
@@ -145,9 +137,8 @@ case class View(dimension: GridDimensions) extends Scene[Output, View.Input] {
   }
 
   private def disableButton(cmd: ActionCommand): Task[Unit] = Task {
-    tiles.tapEach(
-      _.button.setEnabled(cmd match {
-        case Start => false
+    tiles.tapEach(_.button.setEnabled(cmd match {
+        case START => false
         case _ => true
       }))
   }
@@ -170,7 +161,7 @@ case class View(dimension: GridDimensions) extends Scene[Output, View.Input] {
     } yield ()
   }
 
-  private def updateTiles(tiles: Seq[Tile], boardToDraw: Output#BoardToDraw): Task[Unit] = Task {
+  private def updateTiles(tiles: Seq[Tile], boardToDraw: ViewInput#BoardToDraw): Task[Unit] = Task {
     boardToDraw foreach {
       case ((row, column), color) => tiles.find(tile => tile.row == row && tile.column == column) match {
         case Some(tile) => tile.button.setBackground(color)
@@ -182,15 +173,15 @@ case class View(dimension: GridDimensions) extends Scene[Output, View.Input] {
     textField.setText(newGeneration)
   }
 
-  def render(gameState: Output): Task[Unit] = for {
+  override def render(gameState: ViewInput): Task[Unit] = for {
     _ <- Task.shift(swingScheduler)
-    tiles <- Task(tiles)
-    generationTextField <- Task(textField)
-    _ <- updateTiles(tiles, gameState.tiles)
+    tiles <- tiles.liftToTask
+    generationTextField <- textField.liftToTask
     _ <- updateLabel(generationTextField, gameState.generationCount toString)
+    _ <- updateTiles(tiles, gameState.tiles)
   } yield ()
 
-  def display(): Task[Unit] = for {
+  override def display: Task[Unit] = for {
     _ <- Task.shift(swingScheduler)
     container <- frame
     _ <- Task {
@@ -200,5 +191,9 @@ case class View(dimension: GridDimensions) extends Scene[Output, View.Input] {
     }
   } yield ()
 
+  override def emit: Observable[ViewOutput] =
+    Observable.combineLatest3(switchInput, tilesInput, labelInput).map {
+      case (cmd, tiles, gen) => CycleComputationRequest(cmd, tiles, gen)
+    }
 }
 
