@@ -1,14 +1,21 @@
 package ReactiveGameOfLife
 
-import Utilities._
-import cats.effect.unsafe.IORuntime
+import ReactiveGameOfLife.View.View
+import monix.execution.Scheduler
+
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 object Main {
 
-  implicit val context: IORuntime = IORuntime.global
-
   def main(args: Array[String]): Unit = {
-    val v = View().display().evalOn(swingScheduler).unsafeRunSync()
+
+    implicit val scheduler: Scheduler = monix.execution.Scheduler.global
+
+    val gridDimension = GameOfLife.gridDimensions
+
+    val view = View(gridDimension)
+    Await.result(Controller(view).start.runToFuture, Duration.Inf)
   }
 
 }
