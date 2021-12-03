@@ -1,30 +1,72 @@
 package ReactiveGameOfLife
 
-import ReactiveGameOfLife.View.Start
+import java.awt.Color
+
+import ReactiveGameOfLife.GameOfLife.{Alive, Board, Dead, Position, Status}
+import ReactiveGameOfLife.UpdateGameState.{ModelInput, StopRequest, UpdateRequest}
+import ReactiveGameOfLife.Utilities.Implicits.RichObservable
+import ReactiveGameOfLife.View.View._
+import ReactiveGameOfLife.View.View
+import javax.swing.JButton
 import monix.eval.Task
 import monix.reactive.Observable
 
 import scala.concurrent.duration.DurationInt
 
-case class Controller(view: View){
+class Controller(view: View){
 
-  val loop = Observable.interval(33.millis)
+  import Controller._
+  import Controller.ImplicitConversions._
 
-  def getNext(accumulator: Int, next: Int): Int = accumulator match {
-    case 0 => next + 1
-    case _ => accumulator + 1
-  }
+  private val gameLoopEngine = Observable.interval(TIME_INTERVAL).doOnStart(_ => view.display)
 
-  def gameLoop: Task[Unit] = Observable.combineLatest2(view.startAndStopInput, loop/*, view.cellsInput*/)
-                                       .collect {
-                                         case (Start, _) => 0
-                                       }
-                                       .scan(0)(getNext)
-                                       .foreachL(println)
+  private def processInput: Observable[ModelInput] =
+    view.emit.collect {
+      case request: CycleComputationRequest => request.cmd match {
+        case View.START => UpdateRequest(GameOfLife.Generation(request.genNumber, request.tiles))
+        case _ => StopRequest
+      }
+    }
+
+  private def updateModel(): Observable[GameOfLife] = processInput.mergeMap(UpdateGameState(_))
+
+  def start: Task[Unit] =
+    gameLoopEngine.zipMap(updateModel())((_, updatedModel) => updatedModel)
+                  .distinctUntilChanged
+                  .debug(println)
+                  .doOnNext(model => view.render(model))
+                  .completedL
+
 }
 
 object Controller {
 
+  private val FRAMES_PER_SECONDS = 60
+  private val TIME_INTERVAL = 1.seconds / FRAMES_PER_SECONDS
+
   def apply(view: View): Controller = new Controller(view)
+
+  private object ImplicitConversions {
+
+    implicit def inputToGameState(tiles: Seq[Tile]): Board = {
+      def mapColorToStatus(button: JButton): Status = button.getBackground match {
+        case TURNED_ON_CELLS_COLOR => Alive
+        case _ => Dead
+      }
+      tiles.map(tile => Position(tile.row, tile.column) -> mapColorToStatus(tile.button)) toMap
+    }
+
+    implicit def statusToColor(status: Status): Color = status match {
+      case Alive => TURNED_ON_CELLS_COLOR
+      case _ => TURNED_OFF_CELLS_COLOR
+    }
+
+    implicit def modelToModelOnView(model: GameOfLife): ViewInput = new ViewInput {
+      override val generationCount: Int = model.generationNumber
+      override val tiles: BoardToDraw = model.cells.map {
+        case (position: Position, status) => ((position.row, position.column), status: Color)
+      }
+    }
+  }
 
 }
