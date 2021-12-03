@@ -3,11 +3,11 @@ package ReactiveGameOfLife.View
 import monix.eval.Task
 import monix.reactive.Observable
 
-trait View[-Output, +Input] {
+trait Scene[-Input, +Output] {
 
-  def emitUserInput: Observable[Input]
+  def emit: Observable[Output]
 
-  def render(input: Output): Task[Unit]
+  def render(input: Input): Task[Unit]
 
   def display: Task[Unit]
 
