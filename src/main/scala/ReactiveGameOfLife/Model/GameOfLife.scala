@@ -1,6 +1,6 @@
-package ReactiveGameOfLife
+package ReactiveGameOfLife.Model
 
-import ReactiveGameOfLife.GameOfLife.Board
+import ReactiveGameOfLife.Model.GameOfLife.Board
 import cats.Eq
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}

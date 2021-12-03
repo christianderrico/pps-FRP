@@ -1,5 +1,7 @@
 package ReactiveGameOfLife
 
+import ReactiveGameOfLife.Controller.Controller
+import ReactiveGameOfLife.Model.GameOfLife
 import ReactiveGameOfLife.View.View
 import monix.execution.Scheduler
 

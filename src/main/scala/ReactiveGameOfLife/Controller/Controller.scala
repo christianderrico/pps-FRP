@@ -1,12 +1,13 @@
-package ReactiveGameOfLife
+package ReactiveGameOfLife.Controller
 
 import java.awt.Color
 
-import ReactiveGameOfLife.GameOfLife.{Alive, Board, Dead, Position, Status}
-import ReactiveGameOfLife.UpdateGameState.{ModelInput, StopRequest, UpdateRequest}
+import ReactiveGameOfLife.Model.GameOfLife.{Alive, Board, Dead, Position, Status}
+import ReactiveGameOfLife.Model.{GameOfLife, UpdateGameState}
+import ReactiveGameOfLife.Model.UpdateGameState.{ModelInput, StopRequest, UpdateRequest}
 import ReactiveGameOfLife.Utilities.Implicits.RichObservable
-import ReactiveGameOfLife.View.View._
 import ReactiveGameOfLife.View.View
+import ReactiveGameOfLife.View.View._
 import javax.swing.JButton
 import monix.eval.Task
 import monix.reactive.Observable
@@ -15,8 +16,8 @@ import scala.concurrent.duration.DurationInt
 
 class Controller(view: View){
 
-  import Controller._
   import Controller.ImplicitConversions._
+  import Controller._
 
   private val gameLoopEngine = Observable.interval(TIME_INTERVAL).doOnStart(_ => view.display)
 

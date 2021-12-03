@@ -2,7 +2,7 @@ package AkkaStreamsExamples
 
 import java.util.regex.Pattern
 
-import ReactiveGameOfLife.GameOfLife._
+import ReactiveGameOfLife.Model.GameOfLife.{Alive, Board, Dead, Generation, GridDimensions, Position}
 import akka.actor.ActorSystem
 import akka.stream.ClosedShape
 import akka.stream.scaladsl.{Broadcast, Concat, Flow, GraphDSL, RunnableGraph, Sink, Source, ZipWith}
@@ -69,7 +69,7 @@ object e0GameOfLife extends App {
     val concat = b.add(Concat[Generation]())
     val firstGenInjector = Source.single(Generation(0, initialState))
 
-    import ReactiveGameOfLife.UpdateOps._
+    import ReactiveGameOfLife.Model.UpdateOps._
 
     val doGeneration =
       Flow[Generation].flatMapConcat(previousGeneration =>

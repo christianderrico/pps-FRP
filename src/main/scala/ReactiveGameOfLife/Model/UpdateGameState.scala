@@ -1,7 +1,7 @@
-package ReactiveGameOfLife
+package ReactiveGameOfLife.Model
 
+import ReactiveGameOfLife.Model.GameOfLife.{Alive, Dead, Generation, GridDimensions, Position, Status}
 import monix.reactive.Observable
-import ReactiveGameOfLife.GameOfLife.{Alive, Dead, Generation, GridDimensions, Position, Status}
 
 object UpdateGameState {
 
@@ -9,7 +9,7 @@ object UpdateGameState {
   case class UpdateRequest(currentState: GameOfLife) extends ModelInput
   case object StopRequest extends ModelInput
 
-  import ReactiveGameOfLife.UpdateOps._
+  import UpdateOps._
 
   private def identity: Observable[GameOfLife] = Observable.empty[GameOfLife]
 

@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext
 package object Utilities {
 
   val swingScheduler: Scheduler = Scheduler(new ExecutionContext {
-    override def execute(runnable: Runnable): Unit = SwingUtilities.invokeLater(runnable)
+    override def execute(runnable: Runnable): Unit = SwingUtilities.invokeAndWait(runnable)
     override def reportFailure(cause: Throwable): Unit = {}
   })
 

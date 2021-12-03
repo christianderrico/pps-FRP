@@ -3,7 +3,7 @@ package ReactiveGameOfLife.View
 import java.awt.event.ActionEvent
 import java.awt._
 
-import ReactiveGameOfLife.GameOfLife.GridDimensions
+import ReactiveGameOfLife.Model.GameOfLife.GridDimensions
 import ReactiveGameOfLife.Utilities.Implicits.{ObjectLiftable, RichButton, RichTextField}
 import ReactiveGameOfLife.Utilities.swingScheduler
 import javax.swing.border.Border
@@ -78,14 +78,14 @@ case class View(dimension: GridDimensions) extends Scene[ViewInput, ViewOutput] 
 
   private lazy val textPanel: Task[JPanel] = for {
     panel <- new JPanel().liftToTask
-    textField <- Task(textField)
+    textField <- textField.liftToTask
     _ <- Task {
       val columns = 6
       textField.setColumns(columns)
       textField.setEnabled(false)
       textField.setDisabledTextColor(Color.BLACK)
     }
-    genLabel <- Task(new JLabel(GENERATION_LABEL_TEXT))
+    genLabel <- new JLabel(GENERATION_LABEL_TEXT).liftToTask
     _ <- Task {
       panel.setLayout(new FlowLayout())
       panel.add(genLabel)
@@ -177,8 +177,8 @@ case class View(dimension: GridDimensions) extends Scene[ViewInput, ViewOutput] 
     _ <- Task.shift(swingScheduler)
     tiles <- tiles.liftToTask
     generationTextField <- textField.liftToTask
-    _ <- updateLabel(generationTextField, gameState.generationCount toString)
     _ <- updateTiles(tiles, gameState.tiles)
+    _ <- updateLabel(generationTextField, gameState.generationCount toString)
   } yield ()
 
   override def display: Task[Unit] = for {
