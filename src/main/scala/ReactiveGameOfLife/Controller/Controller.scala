@@ -31,12 +31,18 @@ class Controller(view: View){
 
   private def updateModel(): Observable[GameOfLife] = processInput.mergeMap(UpdateGameState(_))
 
-  def start: Task[Unit] =
-    gameLoopEngine.zipMap(updateModel())((_, updatedModel) => updatedModel)
-                  .distinctUntilChanged
-                  .debug(println)
-                  .doOnNext(model => view.render(model))
-                  .completedL
+  private val proactiveLoop: Observable[GameOfLife] =
+    gameLoopEngine
+      .combineLatestMap(updateModel())((_, updatedModel) => updatedModel)
+      .debug(println)
+      .distinctUntilChanged
+
+  private val reactiveLoop: Observable[GameOfLife] =
+    gameLoopEngine
+      .zipMap(updateModel())((_, updatedModel) => updatedModel)
+      .debug(println)
+
+  def start: Task[Unit] = proactiveLoop.doOnNext(model => view.render(model)).completedL
 
 }
 
