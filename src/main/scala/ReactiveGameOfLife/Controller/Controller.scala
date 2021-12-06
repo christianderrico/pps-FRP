@@ -29,7 +29,7 @@ class Controller(view: View){
       }
     }
 
-  private def updateModel(): Observable[GameOfLife] = processInput.mergeMap(UpdateGameState(_))
+  private def updateModel(): Observable[GameOfLife] = processInput.switchMap(UpdateGameState(_))
 
   private val proactiveLoop: Observable[GameOfLife] =
     gameLoopEngine
@@ -42,7 +42,7 @@ class Controller(view: View){
       .zipMap(updateModel())((_, updatedModel) => updatedModel)
       .debug(println)
 
-  def start: Task[Unit] = proactiveLoop.doOnNext(model => view.render(model)).completedL
+  def start: Task[Unit] = reactiveLoop.doOnNext(model => view.render(model)).completedL
 
 }
 

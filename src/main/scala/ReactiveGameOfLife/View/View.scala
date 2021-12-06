@@ -134,7 +134,7 @@ case class View(dimension: GridDimensions) extends Scene[ViewInput, ViewOutput] 
       case TURNED_ON_CELLS_COLOR => TURNED_OFF_CELLS_COLOR
       case _ => TURNED_ON_CELLS_COLOR
     })
-  }
+  }.executeOn(swingScheduler)
 
   private def disableButton(cmd: ActionCommand): Task[Unit] = Task {
     tiles.tapEach(_.button.setEnabled(cmd match {
