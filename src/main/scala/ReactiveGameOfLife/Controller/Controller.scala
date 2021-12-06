@@ -34,7 +34,7 @@ class Controller(view: View){
   private val proactiveLoop: Observable[GameOfLife] =
     gameLoopEngine
       .combineLatestMap(updateModel())((_, updatedModel) => updatedModel)
-      .debug(println)
+      //.debug(println)
       .distinctUntilChanged
 
   private val reactiveLoop: Observable[GameOfLife] =
@@ -42,7 +42,7 @@ class Controller(view: View){
       .zipMap(updateModel())((_, updatedModel) => updatedModel)
       .debug(println)
 
-  def start: Task[Unit] = reactiveLoop.doOnNext(model => view.render(model)).completedL
+  def start: Task[Unit] = proactiveLoop.doOnNext(model => view.render(model)).completedL
 
 }
 

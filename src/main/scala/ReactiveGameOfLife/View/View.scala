@@ -137,7 +137,7 @@ case class View(dimension: GridDimensions) extends Scene[ViewInput, ViewOutput] 
   }.executeOn(swingScheduler)
 
   private def disableButton(cmd: ActionCommand): Task[Unit] = Task {
-    tiles.tapEach(_.button.setEnabled(cmd match {
+    tiles.foreach(_.button.setEnabled(cmd match {
         case START => false
         case _ => true
       }))
@@ -154,12 +154,11 @@ case class View(dimension: GridDimensions) extends Scene[ViewInput, ViewOutput] 
     implicit def sourceToButton(source: Object): JButton = source match {
       case btn: JButton => btn
     }
-
     for {
       _ <- changeText(event.getSource)
       _ <- disableButton(event.getActionCommand)
     } yield ()
-  }
+  }.executeOn(swingScheduler)
 
   private def updateTiles(tiles: Seq[Tile], boardToDraw: ViewInput#BoardToDraw): Task[Unit] = Task {
     boardToDraw foreach {
