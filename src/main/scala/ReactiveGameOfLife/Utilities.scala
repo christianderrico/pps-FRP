@@ -13,10 +13,12 @@ import scala.concurrent.ExecutionContext
 
 package object Utilities {
 
-  val swingScheduler: Scheduler = Scheduler(new ExecutionContext {
+  private class SwingContext extends ExecutionContext {
     override def execute(runnable: Runnable): Unit = SwingUtilities.invokeAndWait(runnable)
     override def reportFailure(cause: Throwable): Unit = {}
-  })
+  }
+
+  val swingScheduler: Scheduler = Scheduler(new SwingContext())
 
   object Implicits {
 
