@@ -1,6 +1,5 @@
 package ReactiveGameOfLife
 import java.awt.event.ActionEvent
-import java.util.regex.Pattern
 
 import javax.swing.event.{DocumentEvent, DocumentListener}
 import javax.swing.{JButton, JTextField, SwingUtilities}

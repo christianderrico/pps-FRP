@@ -7,13 +7,15 @@ import akka.actor.ActorSystem
 import akka.stream.ClosedShape
 import akka.stream.scaladsl.{Broadcast, Concat, Flow, GraphDSL, RunnableGraph, Sink, Source, ZipWith}
 
+import scala.annotation.tailrec
 import scala.concurrent.duration.DurationInt
+import scala.util.Random
 
 object e0GameOfLife extends App {
 
   val gridDimension: GridDimensions = GridDimensions()
 
-  val initialBoard = ".........." +
+  /*val initialBoard = ".........." +
                      ".........." +
                      ".........." +
                      ".........." +
@@ -22,7 +24,18 @@ object e0GameOfLife extends App {
                      ".........." +
                      ".........." +
                      ".........." +
-                     ".........."
+                     ".........."*/
+
+  val initialBoard = randomBoard(gridDimension.rows * gridDimension.columns)("")
+
+  @tailrec
+  def randomBoard(count: Int)(res: String): String = {
+    val isNextCellAlive:Boolean = Random.nextBoolean()
+    count match {
+      case count if count == 0 => res
+      case _ => randomBoard(count-1)(res + (if (isNextCellAlive) "#" else "."))
+    }
+  }
 
   val initialState: Board = initialBoardStringToBoard()
 
@@ -91,7 +104,7 @@ object e0GameOfLife extends App {
     ClosedShape
   })
 
-  implicit val system: ActorSystem = ActorSystem("QuickStart")
+  implicit val system: ActorSystem = ActorSystem("Materializer")
   gameLoop.run()
 
 }
@@ -99,13 +112,13 @@ object e0GameOfLife extends App {
 object Implicits {
   implicit class RichString(string: String) {
     def getAllIndicesOf(char: Char): Seq[Int] = {
-      def internalGetAllIndicesOf(char: Char)(string: String): Seq[Int] = string match {
-        case _ if string.indexOf(char) < 0 => Seq()
-        case _ => (Seq(string.indexOf(char))
-          ++ internalGetAllIndicesOf(char)(string replaceFirst(Pattern.quote(s"$char"), s"${0.toChar}")))
+      @tailrec
+      def getIndexes(char: Char, string: String)(indexes: List[Int]): Seq[Int] = string match {
+        case seq if seq.indexOf(char) < 0 => indexes
+        case _ => getIndexes(char, string replaceFirst(Pattern.quote(s"$char"), s"${0.toChar}"))(indexes appended string.indexOf(char))
       }
 
-      internalGetAllIndicesOf(char)(string)
+      getIndexes(char, string)(List.empty)
     }
   }
 }
