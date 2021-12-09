@@ -1,3 +1,4 @@
+import ObservableFactory.getStrictTimedSource
 import monix.eval.Task
 import monix.execution.Cancelable
 import monix.reactive.{Observable, OverflowStrategy}
@@ -12,16 +13,16 @@ class ObservableSpec extends BaseSpec {
 
     "be built from simple object" in {
       val obsFromString = Observable(testString)
-      val textFuture = getFirstElem(obsFromString)
+      val result = getFirstElem(obsFromString)
 
-      textFuture map {value => value shouldEqual testString}
+      checkResults(expected = testString, obtained = result)
     }
 
     "be built from Iterable" in {
       val obsFromString = Observable.fromIterable(testString)
-      val textFuture = getFirstElem(obsFromString)
+      val result = getFirstElem(obsFromString)
 
-      textFuture map {value => value shouldEqual testString.charAt(0)}
+      checkResults(expected = testString.charAt(0), obtained = result)
     }
 
     "be created from subscriber" in {
@@ -31,12 +32,13 @@ class ObservableSpec extends BaseSpec {
           source.onNext(i)
 
         source.onComplete()
+
         Cancelable()
       }
 
-      val res = getElementsFromSource(obs)
+      val result = getElementsFromSource(obs)
 
-      res map {r => r shouldBe (0 until elemNumber).toList}
+      checkResults(expected = (0 until elemNumber).toList, obtained = result)
 
     }
 
@@ -47,9 +49,9 @@ class ObservableSpec extends BaseSpec {
         Observable.fromIterable(List(1,2,3,4))
       )(_+_)
 
-      val res = getElementsFromSource(obsFromZippedSources)
+      val result = getElementsFromSource(obsFromZippedSources)
 
-      res map {seq => seq shouldBe List(2,4,6,8)}
+      checkResults(expected = List(2,4,6,8), obtained = result)
 
     }
 
@@ -59,9 +61,9 @@ class ObservableSpec extends BaseSpec {
         Observable.interval(1.seconds)
       )((_, _) => getCurrentTimeInSeconds())
 
-      val res = getElementsFromSource(timedObs)
+      val result = getElementsFromSource(timedObs)
 
-      res map {list => list.last - list.head shouldBe list.size - 1}
+      result map {list => list.last - list.head shouldBe list.size - 1}
 
     }
 
@@ -72,9 +74,9 @@ class ObservableSpec extends BaseSpec {
 
       val combinedObs = Observable.combineLatest2(timedObs1, timedObs2)
 
-      val res = getElementsFromSource(combinedObs)
+      val result = getElementsFromSource(combinedObs)
 
-      res map {value => value shouldBe List((1,2),(1,3),(1,4),(1,6),(5,6),(5,7),(5,8))}
+      checkResults(expected = List((1,2),(1,3),(1,4),(1,6),(5,6),(5,7),(5,8)), obtained = result)
 
     }
 
@@ -92,9 +94,9 @@ class ObservableSpec extends BaseSpec {
 
       val obsFromList = Observable.mergePrioritizedList(listOfObservables:_*)
 
-      val res = getElementsFromSource(obsFromList)
+      val result = getElementsFromSource(obsFromList)
 
-      res map {elements => elements shouldBe List.from(1 to 13)}
+      checkResults(expected = List.from(1 to 13), obtained = result)
     }
 
     "be built from async state function" in {
@@ -105,9 +107,9 @@ class ObservableSpec extends BaseSpec {
           Task((previous, next))
       }(0).take(3)
 
-      val res = getElementsFromSource(obsFromStateFunc)
+      val result = getElementsFromSource(obsFromStateFunc)
 
-      res map {seq => seq shouldBe List(0, 1, 2)}
+      checkResults(expected = List(0, 1, 2), obtained = result)
     }
 
   }
