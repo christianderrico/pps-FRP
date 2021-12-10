@@ -15,21 +15,10 @@ object e0GameOfLife extends App {
 
   val gridDimension: GridDimensions = GridDimensions()
 
-  /*val initialBoard = ".........." +
-                     ".........." +
-                     ".........." +
-                     ".........." +
-                     "....###..." +
-                     "...###...." +
-                     ".........." +
-                     ".........." +
-                     ".........." +
-                     ".........."*/
-
   val initialBoard = randomBoard(gridDimension.rows * gridDimension.columns)("")
 
   @tailrec
-  def randomBoard(count: Int)(res: String): String = {
+  private def randomBoard(count: Int)(res: String): String = {
     val isNextCellAlive:Boolean = Random.nextBoolean()
     count match {
       case count if count == 0 => res
@@ -62,7 +51,6 @@ object e0GameOfLife extends App {
 
         map2DPositionTo1DValue(pos1) < map2DPositionTo1DValue(pos2)
       }
-
 
       println("GENERATION: " + i.generationNumber)
 
