@@ -11,7 +11,7 @@ import scala.annotation.tailrec
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
-object e0GameOfLife extends App {
+object AkkaGameOfLife extends App {
 
   val gridDimension: GridDimensions = GridDimensions()
 

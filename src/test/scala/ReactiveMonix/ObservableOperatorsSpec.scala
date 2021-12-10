@@ -1,9 +1,8 @@
-import monix.eval.Task
-import monix.execution.{Cancelable, ExecutionModel, Scheduler, UncaughtExceptionReporter}
-import monix.reactive.{Consumer, Observable}
+package ReactiveMonix
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.{DurationDouble, TimeUnit}
+import monix.eval.Task
+
+import scala.concurrent.duration.DurationDouble
 
 class ObservableOperatorsSpec extends BaseSpec {
 
@@ -30,6 +29,10 @@ class ObservableOperatorsSpec extends BaseSpec {
 
       val begin = 0
       val end = 50
+
+      def parallelEval[A, B](value: A, doOnEval: A => B): Task[B] = {
+        Task(println("Value is: " + value)) *> Task(doOnEval(value))
+      }
 
       val incrementOfOneUnit: Long => Task[Long] = x => parallelEval[Long, Long](x, value => value + 1)
       val parallelism = 4

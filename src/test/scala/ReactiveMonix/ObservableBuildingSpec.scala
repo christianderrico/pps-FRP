@@ -1,11 +1,13 @@
-import ObservableFactory.getStrictTimedSource
+package ReactiveMonix
+
+import ReactiveMonix.ObservableFactory.getStrictTimedSource
 import monix.eval.Task
 import monix.execution.Cancelable
 import monix.reactive.{Observable, OverflowStrategy}
 
 import scala.concurrent.duration.{DurationDouble, DurationInt}
 
-class ObservableSpec extends BaseSpec {
+class ObservableBuildingSpec extends BaseSpec {
 
   val testString = "test"
 
@@ -58,15 +60,18 @@ class ObservableSpec extends BaseSpec {
 
     }
 
+    val secondInMilliseconds = 1000
+    def getCurrentTimeInSeconds: Long = System.currentTimeMillis() / secondInMilliseconds
+
     s"$beBuiltAs a strict timed sequence" in {
       val timedObs = Observable.zipMap2(
         Observable.fromIterable(List(0,1,2,3)),
         Observable.interval(1.seconds)
-      )((_, _) => getCurrentTimeInSeconds())
+      )((_, _) => getCurrentTimeInSeconds)
 
       val result = getElementsFromSource(timedObs)
 
-      result map {list => list.last - list.head shouldBe list.size - 1}
+      checkCondition[List[Long]](l => l.last - l.head == l.indices.last, result)
 
     }
 

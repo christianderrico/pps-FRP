@@ -1,8 +1,10 @@
+package ReactiveMonix
+
 import monix.execution.Ack.Continue
 import monix.execution.Cancelable
 import monix.execution.exceptions.BufferOverflowException
-import monix.reactive.observers.Subscriber
 import monix.reactive.OverflowStrategy
+import monix.reactive.observers.Subscriber
 
 import scala.concurrent.Future
 
@@ -49,7 +51,7 @@ class BackPressureSpec extends BaseSpec {
         val obsOfClearBuffer = sourceWithEmitFunction(OverflowStrategy.ClearBuffer(bufferCapacity))
         val result = getElementsFromSource(obsOfClearBuffer)
 
-        result map {value => assert(value.size < rangeLimit) }
+        checkCondition[List[Long]](list => list.size < rangeLimit, result)
 
       }
 
@@ -58,7 +60,7 @@ class BackPressureSpec extends BaseSpec {
         val obsOfUnbounded = sourceWithEmitFunction(OverflowStrategy.Unbounded)
         val result = getElementsFromSource(obsOfUnbounded)
 
-        result map { value => assert(value.size == rangeLimit)}
+        checkCondition[List[Long]](list => list.size == rangeLimit, result)
 
       }
 
