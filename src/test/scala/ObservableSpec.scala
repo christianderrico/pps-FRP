@@ -11,14 +11,17 @@ class ObservableSpec extends BaseSpec {
 
   "An Observable" should {
 
-    "be built from simple object" in {
+    val beBuiltFrom = "be built from"
+    val beBuiltAs = "be built as"
+
+    s"$beBuiltFrom simple object" in {
       val obsFromString = Observable(testString)
       val result = getFirstElem(obsFromString)
 
       checkResults(expected = testString, obtained = result)
     }
 
-    "be built from Iterable" in {
+    s"$beBuiltFrom Iterable" in {
       val obsFromString = Observable.fromIterable(testString)
       val result = getFirstElem(obsFromString)
 
@@ -42,7 +45,7 @@ class ObservableSpec extends BaseSpec {
 
     }
 
-    "be built from two sources" in {
+    s"$beBuiltFrom two sources" in {
 
       val obsFromZippedSources = Observable.zipMap2(
         Observable.fromIterable(List(1,2,3,4)),
@@ -55,7 +58,7 @@ class ObservableSpec extends BaseSpec {
 
     }
 
-    "be built as a strict timed sequence" in {
+    s"$beBuiltAs a strict timed sequence" in {
       val timedObs = Observable.zipMap2(
         Observable.fromIterable(List(0,1,2,3)),
         Observable.interval(1.seconds)
@@ -67,7 +70,7 @@ class ObservableSpec extends BaseSpec {
 
     }
 
-    "be built as a relaxed timed sequence" in {
+    s"$beBuiltAs as a relaxed timed sequence" in {
 
       val timedObs1 = getStrictTimedSource(List(1,5), 1.seconds)
       val timedObs2 = getStrictTimedSource(List(2,3,4,6,7,8), 0.3.seconds)
@@ -80,7 +83,7 @@ class ObservableSpec extends BaseSpec {
 
     }
 
-    "be built from various prioritized streams of data" in {
+    s"$beBuiltFrom various prioritized streams of data" in {
       val high = 3
       val medium = 2
       val low = 1
@@ -99,7 +102,7 @@ class ObservableSpec extends BaseSpec {
       checkResults(expected = List.from(1 to 13), obtained = result)
     }
 
-    "be built from async state function" in {
+    s"$beBuiltFrom async state function" in {
       val obsFromStateFunc = Observable.fromAsyncStateAction {
         counter: Int =>
           val previous = counter

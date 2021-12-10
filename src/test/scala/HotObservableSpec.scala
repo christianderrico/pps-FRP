@@ -1,3 +1,3 @@
-class HotObservableSpec {
+class HotObservableSpec extends BaseSpec {
 
 }

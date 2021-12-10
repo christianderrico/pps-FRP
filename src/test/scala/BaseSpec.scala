@@ -1,12 +1,13 @@
 import monix.eval.Task
-import monix.execution.Scheduler
-import monix.reactive.{Consumer, Observable}
+import monix.execution.{Cancelable, Scheduler}
+import monix.reactive.observers.Subscriber
+import monix.reactive.{Consumer, Observable, OverflowStrategy}
 import org.scalatest
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
 
 import scala.concurrent.Future
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.concurrent.duration.FiniteDuration
 
 
 trait BaseSpec extends AsyncWordSpec with Matchers {
@@ -41,5 +42,10 @@ object ObservableFactory {
   }
 
   def getRangeObservable(from: Long, to: Long): Observable[Long] = Observable.range(from, to)
+
+  def createSourceWithBackPressurePolicy[A](subFunction: Subscriber.Sync[A] => Cancelable)
+                                           (overflowStrategy: OverflowStrategy.Synchronous[A]): Observable[A] =
+    Observable.create(overflowStrategy)(subFunction)
+
 
 }

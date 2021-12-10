@@ -1,7 +1,9 @@
 import monix.eval.Task
-import monix.reactive.Observable
+import monix.execution.{Cancelable, ExecutionModel, Scheduler, UncaughtExceptionReporter}
+import monix.reactive.{Consumer, Observable}
 
-import scala.concurrent.duration.DurationDouble
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration.{DurationDouble, TimeUnit}
 
 class ObservableOperatorsSpec extends BaseSpec {
 
@@ -31,13 +33,16 @@ class ObservableOperatorsSpec extends BaseSpec {
 
       val incrementOfOneUnit: Long => Task[Long] = x => parallelEval[Long, Long](x, value => value + 1)
       val parallelism = 4
-      val expectedResult = ((begin+1) until (end+1)).toList
+      val expectedResult = ((begin + 1) until (end + 1)).toList
       val rangeObs = getRangeObservable(begin, end)
 
-      "asynchronously transform data in parallel " in {
+      val transformDataInParallel = "transform data in parallel"
+      val preservingOrder = "preserving order"
+
+      s"$transformDataInParallel $preservingOrder" in {
 
         val parallelOrderedObs = rangeObs.mapParallelOrdered(parallelism)(incrementOfOneUnit)
-                                         .dump("O")
+          .dump("O")
 
         val result = getElementsFromSource(parallelOrderedObs)
 
@@ -45,10 +50,10 @@ class ObservableOperatorsSpec extends BaseSpec {
 
       }
 
-      "synchronously transform data in parallel " in {
+      s"$transformDataInParallel not $preservingOrder" in {
 
         val parallelOrderedObs = rangeObs.mapParallelUnordered(parallelism)(incrementOfOneUnit)
-                                         .dump("O")
+          .dump("O")
 
         val result = getElementsFromSource(parallelOrderedObs)
 
@@ -56,7 +61,6 @@ class ObservableOperatorsSpec extends BaseSpec {
 
       }
 
-/*
       val sourceA = getStrictTimedSource(List(0, 1, 2, 3), 0.3.seconds)
       val sourceB = getStrictTimedSource(List(5, 6, 7), 0.8.seconds)
 
@@ -66,10 +70,10 @@ class ObservableOperatorsSpec extends BaseSpec {
 
         val concatObservable = sourceA.concatMap(v => sourceB.map(elem => (v, elem)))
         val result = getElementsFromSource(concatObservable)
-        val expectedResult = List((0,5), (0,6), (0,7),
-                                  (1,5), (1,6), (1,7),
-                                  (2,5), (2,6), (2,7),
-                                  (3,5), (3,6), (3,7))
+        val expectedResult = List((0, 5), (0, 6), (0, 7),
+          (1, 5), (1, 6), (1, 7),
+          (2, 5), (2, 6), (2, 7),
+          (3, 5), (3, 6), (3, 7))
 
         checkResults(expectedResult, result)
       }
@@ -78,7 +82,7 @@ class ObservableOperatorsSpec extends BaseSpec {
 
         val switchedObservable = sourceA.switchMap(v => sourceB.map(elem => (v, elem)))
         val result = getElementsFromSource(switchedObservable)
-        val expectedResult = List((0,5), (1,5), (2,5), (3,5), (3,6), (3,7))
+        val expectedResult = List((0, 5), (1, 5), (2, 5), (3, 5), (3, 6), (3, 7))
 
         checkResults(expectedResult, result)
 
@@ -95,9 +99,7 @@ class ObservableOperatorsSpec extends BaseSpec {
 
         checkResults(expectedResult, result)
       }
-*/
 
     }
   }
-
 }
