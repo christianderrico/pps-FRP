@@ -85,9 +85,9 @@ object AkkaGameOfLife extends App {
           .map(getNextGeneration(previousGeneration)))
 
     loopEngine ~> zip.in0
-    zip.out ~> broadcast ~> printer
-    zip.in1 <~ concat <~ firstGenInjector
-    concat <~ doGeneration <~ broadcast
+                  zip.out ~> broadcast ~> printer
+                  zip.in1 <~ concat <~ firstGenInjector
+                             concat <~ doGeneration <~ broadcast
 
     ClosedShape
   })

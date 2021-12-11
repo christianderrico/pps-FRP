@@ -27,7 +27,7 @@ class GraphDSLSpec extends BaseSpec {
         val sourceB = Source[Int](start to 200)
 
         val flowA = Flow[Int].map(_ * 2)
-        val followedflowB = Flow[Int].map(_ / 2)
+        val stepTwo = Flow[Int].map(_ / 2)
 
         val zip = builder.add(ZipWith[Int, Int, Int](Keep.right))
         val outputPorts = 2
@@ -37,19 +37,19 @@ class GraphDSLSpec extends BaseSpec {
 
         val broadcastB = builder.add(Broadcast[Int](outputPorts))
 
-        val followedFlowD = Flow[Int].map(_ * 5)
+        val stepThree = Flow[Int].map(_ * 5)
         val flowE = Flow[Int].map(_.toString)
 
         val zip2 = builder.add(ZipWith[Int, String, Int](Keep.left))
         val zip3 = builder.add(ZipWith[Int, Int, Int](Keep.right))
 
         sourceA ~>     flowA     ~> zip.in0
-        sourceB ~> followedflowB ~> zip.in1
+        sourceB ~>     stepTwo   ~> zip.in1
                                     zip.out ~> broadcastA.in
                                                broadcastA.out(0) ~> broadcastB.in
                                                                     broadcastB.out(0) ~> flowC ~>             zip3.in0
                                                                     broadcastB.out(1) ~> flowE ~> zip2.in1
-                                               broadcastA.out(1) ~>   followedFlowD   ~>          zip2.in0
+                                               broadcastA.out(1) ~>   stepThree       ~>          zip2.in0
                                                                                                   zip2.out ~> zip3.in1
                                                                                                               zip3.out ~> sink
 
@@ -57,10 +57,10 @@ class GraphDSLSpec extends BaseSpec {
         ClosedShape
       })
 
-      val secondStep: Int => Int = _ / 2
+      val stepTwo: Int => Int = _ / 2
       val thirdStep: Int => Int = _ * 5
 
-      Await.result(graph.run(), 1.seconds) shouldBe thirdStep(secondStep(start))
+      Await.result(graph.run(), 1.seconds) shouldBe thirdStep(stepTwo(start))
     }
 
     "to create complex data pipelines using complex base block" in {
