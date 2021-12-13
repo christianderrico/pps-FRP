@@ -59,8 +59,10 @@ class GraphDSLSpec extends BaseSpec {
 
       val stepTwo: Int => Int = _ / 2
       val thirdStep: Int => Int = _ * 5
+      val materializedValue = graph.run()
+      val resOutOfPipeline = awaitForResult(materializedValue)
 
-      Await.result(graph.run(), 1.seconds) shouldBe thirdStep(stepTwo(start))
+      resOutOfPipeline shouldBe thirdStep(stepTwo(start))
     }
 
     "to create complex data pipelines using composed base blocks" in {

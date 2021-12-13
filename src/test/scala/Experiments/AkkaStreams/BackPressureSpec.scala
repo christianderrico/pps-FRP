@@ -50,7 +50,7 @@ class BackPressureSpec extends BaseSpec {
 
   }
 
-   "Especially, when dataflow runs in loop, " + it should {
+   "Especially, when dataflow runs in loop " + it should {
 
      "be handled with Buffer Overflow Strategy, to avoid deadlock" in {
 
