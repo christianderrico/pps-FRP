@@ -15,8 +15,7 @@ class BaseSpec extends AnyWordSpec with Matchers {
 
   protected def getElementsFromSource[A, Seq[_]](source: Source[A, _]): Future[scala.Seq[A]] = source.runWith(Sink.seq[A])
 
-  protected def getFirstElementFromSource[A](source: Source[A, _]): Future[A] = source.runWith(Sink.head[A])
-
-  protected def awaitForResult[A](result: Future[A], timeout: FiniteDuration = 1.seconds): A = Await.result(result, timeout)
+  protected def awaitForResult[A](result: Future[A], timeout: FiniteDuration = 1.seconds): A =
+    Await.result(result, timeout)
 
 }

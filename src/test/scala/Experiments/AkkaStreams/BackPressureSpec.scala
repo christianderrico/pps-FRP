@@ -44,9 +44,7 @@ class BackPressureSpec extends BaseSpec {
 
       val graph = createLoopGraph[Int](increment, filter, 0)
 
-      val result = graph.run()
-
-      assertThrows[TimeoutException](Await.result(result, 5.seconds))
+      assertThrows[TimeoutException](awaitForResult(graph.run(), 5.seconds))
 
     }
 
@@ -61,9 +59,10 @@ class BackPressureSpec extends BaseSpec {
        val filterWithBuffer = filter.buffer(bufferDim, OverflowStrategy.dropHead)
 
        val graph = createLoopGraph[Int](incrementWithBuffer, filterWithBuffer, 0)
-       val result = graph.run()
+       val materializedValue = graph.run()
+       val numberAfterThreshold = awaitForResult(materializedValue)
 
-       Await.result(result, 5.seconds) shouldBe threshold + 1
+       numberAfterThreshold shouldBe threshold + 1
      }
 
    }
