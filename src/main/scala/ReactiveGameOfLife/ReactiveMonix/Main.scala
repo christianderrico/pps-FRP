@@ -17,7 +17,7 @@ object Main {
     val gridDimension = GameOfLife.gridDimensions
 
     val view = View(gridDimension)
-    Await.result(Controller(view).start.runToFuture, Duration.Inf)
+    Await.result(Controller(view).runToFuture, Duration.Inf)
   }
 
 }

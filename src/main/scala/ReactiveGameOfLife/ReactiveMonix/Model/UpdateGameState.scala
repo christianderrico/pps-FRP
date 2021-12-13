@@ -1,8 +1,11 @@
 package ReactiveGameOfLife.Model
 
-import ReactiveGameOfLife.Model.GameOfLife.{Alive, Dead, Generation, GridDimensions, Position, Status}
+import ReactiveGameOfLife.Model.GameOfLife.{Live, Dead, Generation, GridDimensions, Position, State}
 import monix.reactive.Observable
 
+/**
+ * A module used to apply game logic on request coming from Controller part of the application.
+ */
 object UpdateGameState {
 
   trait ModelInput
@@ -11,18 +14,24 @@ object UpdateGameState {
 
   import UpdateOps._
 
+  /*
+  *  Doesn't apply any transformation on current generation to compute next
+  */
   private def identity: Observable[GameOfLife] = Observable.empty[GameOfLife]
 
-  private def update(previousGeneration: GameOfLife): Observable[GameOfLife] = {
-    def countIfAlive(position: Position): Int = previousGeneration.cells(position) match {
-      case Alive => 1
+  /*
+   * Computes next generation from the previous one according Game of Life's logics
+   */
+  private def update(currentGeneration: GameOfLife): Observable[GameOfLife] = {
+    def countIfAlive(position: Position): Int = currentGeneration.cells(position) match {
+      case Live => 1
       case _ => 0
     }
 
     val rows = GameOfLife.gridDimensions.rows
     val columns = GameOfLife.gridDimensions.columns
 
-    Observable.fromIterable(previousGeneration.cells)
+    Observable.fromIterable(currentGeneration.cells)
       .mergeMap {
         case (position, status) =>
           Observable.fromIterable(getNeighboursPositions(position)(GameOfLife.gridDimensions))
@@ -30,10 +39,15 @@ object UpdateGameState {
             .map(nAliveNeighbours => applyGameOfLifeRulesBy(nAliveNeighbours, status))
       }
       .bufferTumbling(rows * columns)
-      .map(newStatus => getNextGeneration(previousGeneration)(newStatus))
+      .map(newStatus => getNextGeneration(currentGeneration)(newStatus))
       .sample(GameOfLife.INTERVAL_BETWEEN_GENERATION)
   }
 
+  /***
+   * According to the [[UpdateRequest]], computes the next [[Generation]]
+   * @param updateRequest incoming request
+   * @return an [[Observable]] of next Generation
+   */
   def apply(updateRequest: ModelInput): Observable[GameOfLife] = updateRequest match {
     case req: UpdateRequest => update(req.currentState)
     case StopRequest => identity
@@ -41,6 +55,9 @@ object UpdateGameState {
 
 }
 
+/**
+ * Game Logic utility functions.
+ */
 object UpdateOps {
 
   def getNeighboursPositions(referenceCell: Position)(gridDimensions: GridDimensions): Seq[Position] = {
@@ -61,14 +78,14 @@ object UpdateOps {
   val MINIMUM_OF_ALIVE_NEIGHBOURS = 2
   val MAXIMUM_OF_ALIVE_NEIGHBOURS = 3
 
-  def applyGameOfLifeRulesBy(nOfAliveNeighbours: Int, referenceCellStatus: Status): Status =
+  def applyGameOfLifeRulesBy(nOfAliveNeighbours: Int, referenceCellStatus: State): State =
     (nOfAliveNeighbours, referenceCellStatus) match {
       case (n, _) if n < MINIMUM_OF_ALIVE_NEIGHBOURS || n > MAXIMUM_OF_ALIVE_NEIGHBOURS => Dead
-      case (n, status) if n == MAXIMUM_OF_ALIVE_NEIGHBOURS || status == Alive => Alive
+      case (n, status) if n == MAXIMUM_OF_ALIVE_NEIGHBOURS || status == Live => Live
       case _ => Dead
     }
 
-  def getNextGeneration(previous: GameOfLife)(newCellsStatus: Seq[Status]): Generation =
+  def getNextGeneration(previous: GameOfLife)(newCellsStatus: Seq[State]): Generation =
     Generation(
       previous.generationNumber + 1,
       previous.cells.zip(newCellsStatus).map {

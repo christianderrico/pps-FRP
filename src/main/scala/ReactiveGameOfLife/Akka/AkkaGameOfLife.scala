@@ -2,7 +2,7 @@ package AkkaStreamsExamples
 
 import java.util.regex.Pattern
 
-import ReactiveGameOfLife.Model.GameOfLife.{Alive, Board, Dead, Generation, GridDimensions, Position}
+import ReactiveGameOfLife.Model.GameOfLife.{Live, Board, Dead, Generation, GridDimensions, Position}
 import akka.actor.ActorSystem
 import akka.stream.ClosedShape
 import akka.stream.scaladsl.{Broadcast, Concat, Flow, GraphDSL, RunnableGraph, Sink, Source, ZipWith}
@@ -32,7 +32,7 @@ object AkkaGameOfLife extends App {
     import Implicits._
 
     val dead = initialBoard.getAllIndicesOf('.').map((_, Dead))
-    val alive = initialBoard.getAllIndicesOf('#').map((_, Alive))
+    val alive = initialBoard.getAllIndicesOf('#').map((_, Live))
     (dead ++ alive).map(v => (Position(v._1 / gridDimension.rows, v._1 % gridDimension.columns), v._2))
       .map(cell => cell._1 -> cell._2)
       .toMap
@@ -57,7 +57,7 @@ object AkkaGameOfLife extends App {
       Source(i.cells.toList.sortWith((first, second) => (first, second) match {
         case ((pos1, _), (pos2, _)) => compareTwoPositions(pos1, pos2)
       })).map {
-        case (_, status) if status == Alive => "#"
+        case (_, status) if status == Live => "#"
         case _ => "."
       }.grouped(gridDimension.rows)
         .map(s => "".concat(s))
@@ -78,7 +78,7 @@ object AkkaGameOfLife extends App {
           case (cellPosition, cellStatus) =>
             Source(getNeighboursPositions(cellPosition)(gridDimension)) //get all possible neighbours
               .fold(0)((nOfAliveNeigh, neighbourPosition) =>
-                nOfAliveNeigh + (if (previousGeneration.cells(neighbourPosition) == Alive) 1 else 0))
+                nOfAliveNeigh + (if (previousGeneration.cells(neighbourPosition) == Live) 1 else 0))
               .map(nOfAliveNeighbours => applyGameOfLifeRulesBy(nOfAliveNeighbours, cellStatus))
         }
           .grouped(gridDimension.rows * gridDimension.columns)

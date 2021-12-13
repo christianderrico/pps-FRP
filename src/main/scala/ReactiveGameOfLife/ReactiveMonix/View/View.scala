@@ -4,7 +4,7 @@ import java.awt.event.ActionEvent
 import java.awt._
 
 import ReactiveGameOfLife.Model.GameOfLife.GridDimensions
-import ReactiveGameOfLife.Utilities.Implicits.{ObjectLiftable, RichButton, RichTextField}
+import ReactiveGameOfLife.Utilities.Implicits.{Liftable, RichButton, RichTextField}
 import ReactiveGameOfLife.Utilities.swingScheduler
 import javax.swing.border.Border
 import javax.swing._
@@ -13,6 +13,11 @@ import monix.reactive.Observable
 
 object View {
 
+  def apply(dimension: GridDimensions): View = new View(dimension)
+
+  /**
+   * It models the visual representation of Model according to the protocol adopted by this implementation of [[Scene]]
+   */
   trait ViewInput {
     type ButtonCoordinates = (Int, Int)
     type BoardToDraw = Map[ButtonCoordinates, Color]
@@ -20,12 +25,26 @@ object View {
     def tiles: BoardToDraw
   }
 
+  /**
+   * It models output produced by this implementation of [[Scene]]
+   */
   trait ViewOutput
+
+  /**
+   * It's a request that regards the cyclical computation of generations
+   * @param cmd directive that aims to start or stop the game
+   * @param tiles sequence of [[Tile]], forming the current gen
+   * @param genNumber progressive id number of gen
+   */
   case class CycleComputationRequest(cmd: ActionCommand, tiles: Seq[Tile], genNumber: Int) extends ViewOutput
 
+  /**
+   * Visual representation of cells on the board
+   * @param row row position of cell
+   * @param column column position of cell
+   * @param button JButton that display cell state
+   */
   case class Tile(row: Int, column: Int, button: JButton)
-
-  def apply(dimension: GridDimensions): View = new View(dimension)
 
   val TURNED_ON_CELLS_COLOR: Color = Color.cyan
   val TURNED_OFF_CELLS_COLOR: Null = null

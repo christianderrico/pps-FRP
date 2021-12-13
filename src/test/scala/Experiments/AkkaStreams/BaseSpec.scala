@@ -9,7 +9,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
-class AkkaBaseSpec extends AnyWordSpec with Matchers {
+class BaseSpec extends AnyWordSpec with Matchers {
 
   implicit val testKit: ActorSystem[Nothing] = ActorTestKit().system
 

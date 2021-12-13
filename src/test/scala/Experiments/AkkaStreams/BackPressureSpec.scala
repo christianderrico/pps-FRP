@@ -34,8 +34,8 @@ class BackPressureSpec extends BaseSpec {
   val incrementOfUnity: Int => Int = _+1
   val threshold = 50
 
-  val increment = Flow[Int].map(incrementOfUnity)
-  val filter = Flow[Int].filter(_ > threshold)
+  private val increment = Flow[Int].map(incrementOfUnity)
+  private val filter = Flow[Int].filter(_ > threshold)
 
   "Handling streams with asynchronous backpressure " can {
 
