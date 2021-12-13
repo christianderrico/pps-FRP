@@ -8,7 +8,7 @@ import scala.concurrent.duration.DurationInt
 
 class BackPressureSpec extends BaseSpec {
 
-  def createLoopGraph[A](f1: Flow[A, A, _], f2: Flow[A, A, _], start: A): RunnableGraph[Future[A]] = {
+  private def createLoopGraph[A](f1: Flow[A, A, _], f2: Flow[A, A, _], start: A = 0): RunnableGraph[Future[A]] = {
 
     val sink = Sink.head[A]
 
@@ -42,7 +42,7 @@ class BackPressureSpec extends BaseSpec {
     "be dangerous because it can cause deadlock if all internal buffers get full, " +
       "stopping source with backpressure forever" in {
 
-      val graph = createLoopGraph[Int](increment, filter, 0)
+      val graph = createLoopGraph[Int](increment, filter)
 
       assertThrows[TimeoutException](awaitForResult(graph.run(), 5.seconds))
 
@@ -58,7 +58,7 @@ class BackPressureSpec extends BaseSpec {
        val incrementWithBuffer = increment.buffer(bufferDim, OverflowStrategy.dropHead)
        val filterWithBuffer = filter.buffer(bufferDim, OverflowStrategy.dropHead)
 
-       val graph = createLoopGraph[Int](incrementWithBuffer, filterWithBuffer, 0)
+       val graph = createLoopGraph[Int](incrementWithBuffer, filterWithBuffer)
        val materializedValue = graph.run()
        val numberAfterThreshold = awaitForResult(materializedValue)
 
