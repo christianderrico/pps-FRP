@@ -1,4 +1,4 @@
-package AkkaStreams
+package Experiments.AkkaStreams
 
 import akka.stream.{ClosedShape, OverflowStrategy}
 import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, Merge, RunnableGraph, Sink, Source}
@@ -31,15 +31,16 @@ class BackPressureSpec extends BaseSpec {
 
   }
 
-  "Handling streams with asynchronous backpressures " should {
+  val incrementOfUnity: Int => Int = _+1
+  val threshold = 50
 
-    val incrementOfUnity: Int => Int = _+1
-    val threshold = 50
+  val increment = Flow[Int].map(incrementOfUnity)
+  val filter = Flow[Int].filter(_ > threshold)
 
-    val increment = Flow[Int].map(incrementOfUnity)
-    val filter = Flow[Int].filter(_ > threshold)
+  "Handling streams with asynchronous backpressure " can {
 
-    "dangerous because it can cause deadlock if all internal buffers get full, backpressuring source forever" in {
+    "be dangerous because it can cause deadlock if all internal buffers get full, " +
+      "stopping source with backpressure forever" in {
 
       val graph = createLoopGraph[Int](increment, filter, 0)
 
@@ -49,17 +50,22 @@ class BackPressureSpec extends BaseSpec {
 
     }
 
-    "handle with Buffer Overflow Strategy" in {
-
-      val bufferDim = 100
-      val incrementWithBuffer = increment.buffer(bufferDim, OverflowStrategy.dropHead)
-      val filterWithBuffer = filter.buffer(bufferDim, OverflowStrategy.dropHead)
-
-      val graph = createLoopGraph[Int](incrementWithBuffer, filterWithBuffer, 0)
-      val result = graph.run()
-
-      Await.result(result, 5.seconds) shouldBe threshold + 1
-    }
   }
+
+   "Especially, when dataflow runs in loop, " + it should {
+
+     "be handled with Buffer Overflow Strategy, to avoid deadlock" in {
+
+       val bufferDim = 100
+       val incrementWithBuffer = increment.buffer(bufferDim, OverflowStrategy.dropHead)
+       val filterWithBuffer = filter.buffer(bufferDim, OverflowStrategy.dropHead)
+
+       val graph = createLoopGraph[Int](incrementWithBuffer, filterWithBuffer, 0)
+       val result = graph.run()
+
+       Await.result(result, 5.seconds) shouldBe threshold + 1
+     }
+
+   }
 
 }

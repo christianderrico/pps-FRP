@@ -1,15 +1,15 @@
-package AkkaStreams
+package Experiments.AkkaStreams
 
-import akka.stream.{ClosedShape, FlowShape, Outlet, SinkShape, SourceShape}
-import akka.stream.scaladsl.{Balance, Broadcast, Concat, Flow, GraphDSL, Keep, Merge, RunnableGraph, Sink, Source, ZipWith}
+import akka.stream.{ClosedShape, FlowShape, SourceShape}
+import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, Keep, Merge, RunnableGraph, Sink, Source, ZipWith}
 
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration.{DurationInt, FiniteDuration}
+import scala.concurrent.Await
+import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
 class GraphDSLSpec extends BaseSpec {
 
-  val allow = afterWord("allow")
+  private val allow = afterWord("allow")
 
   "Graph DSL" should allow {
 
@@ -63,42 +63,45 @@ class GraphDSLSpec extends BaseSpec {
       Await.result(graph.run(), 1.seconds) shouldBe thirdStep(stepTwo(start))
     }
 
-    "to create complex data pipelines using complex base block" in {
+    "to create complex data pipelines using composed base blocks" in {
       val complexSource = Source.fromGraph(GraphDSL.create(){ implicit builder =>
        import GraphDSL.Implicits._
 
-       val upperBound = 100
-       val n = Random.nextInt(upperBound)
+        val upperBound = 100
+        val n = Random.nextInt(upperBound)
+        val evenNumber = 2 * n
+        val oddNumber = 2 * n + 1
 
-       val sourceA = Source.single(2 * n)
-       val sourceB = Source.single(2 * n + 1)
+        val sourceA = Source.single(evenNumber)
+        val sourceB = Source.single(oddNumber)
 
-       val zip = builder.add(ZipWith[Int, Int, Double](_+_))
-       val flow = Flow[Double].map(_ * 2)
-       val merge = builder.add(Merge[Double](1))
+        val zip = builder.add(ZipWith[Int, Int, Double](_ + _))
+        val flow = Flow[Double].map(_ * 2)
+        val merge = builder.add(Merge[Double](1))
 
-       sourceA ~> zip.in0
-       sourceB ~> zip.in1
-                  zip.out ~> flow ~> merge
+        sourceA ~> zip.in0
+        sourceB ~> zip.in1
+                   zip.out ~> flow ~> merge
 
-       SourceShape(merge.out)
+        SourceShape(merge.out)
      })
 
       val complexFlow = Flow.fromGraph(GraphDSL.create(){ implicit builder =>
        import GraphDSL.Implicits._
 
-       val outPorts = 2
-       val broadcast = builder.add(Broadcast[Double](outPorts))
+        val outPorts = 2
+        val broadcast = builder.add(Broadcast[Double](outPorts))
+        val checkEvenCondition: Double => Boolean = _ % 2 == 0
 
-       val flowA = Flow[Double].filter(_ % 2 == 0).map(_ * 0)
-       val flowB = Flow[Double].map(_ * 2)
+        val flowA = Flow[Double].filter(checkEvenCondition).map(_ * 0)
+        val flowB = Flow[Double].map(_ * 2)
 
-       val zip = builder.add(ZipWith[Double, Double, Double]((v1, v2) => Math.min(v1, v2)))
+        val zip = builder.add(ZipWith[Double, Double, Double](Math.min))
 
-       broadcast.out(0) ~> flowA ~> zip.in0
-       broadcast.out(1) ~> flowB ~> zip.in1
+        broadcast.out(0) ~> flowA ~> zip.in0
+        broadcast.out(1) ~> flowB ~> zip.in1
 
-       FlowShape(broadcast.in, zip.out)
+        FlowShape(broadcast.in, zip.out)
      })
 
       //fluid DSL
@@ -108,11 +111,10 @@ class GraphDSLSpec extends BaseSpec {
           .toMat(Sink.head[Double])(Keep.right)
       }
 
-      val res = complexSource
-                  .viaMat(complexFlow)(Keep.right)
-                  .toMat(complexSink)(Keep.right).run()
+      val materializedValue = complexSource.viaMat(complexFlow)(Keep.right).toMat(complexSink)(Keep.right).run()
+      val resultOutOfPipe = awaitForResult(materializedValue)
 
-      Await.result(res, 1.seconds) shouldBe 0
+      resultOutOfPipe shouldBe 0
 
     }
   }

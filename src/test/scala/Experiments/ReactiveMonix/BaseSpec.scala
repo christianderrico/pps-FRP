@@ -2,8 +2,7 @@ package ReactiveMonix
 
 import monix.execution.{Cancelable, Scheduler}
 import monix.reactive.observers.Subscriber
-import monix.reactive.{Consumer, Observable, OverflowStrategy}
-import org.scalatest
+import monix.reactive.{Observable, OverflowStrategy}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
 
@@ -18,10 +17,10 @@ trait BaseSpec extends AsyncWordSpec with Matchers {
 
   def getElementsFromSource[A](source: Observable[A]): Future[List[A]] = source.toListL.runToFuture
 
-  def checkCondition[A](expected: A => Boolean, obtained: Future[A]): Future[scalatest.Assertion] =
+  def checkCondition[A](expected: A => Boolean, obtained: Future[A]) =
     obtained map(value => assert(expected(value)))
 
-  def checkResults[A](expected: A, obtained: Future[A]): Future[scalatest.Assertion] =
+  def checkResults[A](expected: A, obtained: Future[A]) =
     obtained map(value => value should equal(expected))
 
 }

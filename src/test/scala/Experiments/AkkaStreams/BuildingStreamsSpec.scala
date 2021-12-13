@@ -1,11 +1,8 @@
-package AkkaStreams
+package Experiments.AkkaStreams
 
-import akka.Done
-import akka.stream.{CompletionStrategy, KillSwitches, OverflowStrategy}
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import org.reactivestreams.Subscriber
 
-import scala.concurrent.Await
 import scala.concurrent.duration.{DurationDouble, DurationInt}
 
 class BuildingStreamsSpec extends BaseSpec {
@@ -21,15 +18,20 @@ class BuildingStreamsSpec extends BaseSpec {
         val rangeStart = 1
         val rangeLimit = 10_000
         val source = Source(rangeStart to rangeLimit)
+        val materializedValue = source.runWith(Sink.seq)
 
-        Await.result(source.runWith(Sink.seq), 1.seconds) shouldBe (rangeStart to rangeLimit)
+        val rangeSeq = awaitForResult(materializedValue)
+
+        rangeSeq shouldBe (rangeStart to rangeLimit)
       }
 
       "from a single value" in {
 
         val source = Source.single(0)
+        val materializedValue = source.runWith(Sink.head)
+        val zero = awaitForResult(materializedValue)
 
-        Await.result(source.runWith(Sink.head), 1.seconds) shouldBe 0
+        zero shouldBe 0
       }
 
       val rangeStart = 0
@@ -45,14 +47,13 @@ class BuildingStreamsSpec extends BaseSpec {
       "from a Publisher " in {
 
         //publisher doesn't backpressure source
-        val result1 = getElementsFromSource(sourceFromPublisher)
-        assertThrows[IllegalStateException](Await.result(result1, 1.seconds))
+        assertThrows[IllegalStateException](awaitForResult(getElementsFromSource(sourceFromPublisher)))
 
         //timed-based flow control
-        val result2 = getElementsFromSource(sourceFromPublisher.throttle(1, 100.millis))
-        val seq = Await.result(result2, 1.seconds)
+        val materializedValues = getElementsFromSource(sourceFromPublisher.throttle(1, 100.millis))
+        val rangeSeq = awaitForResult(materializedValues)
 
-        seq shouldBe (rangeStart until rangeLimit)
+        rangeSeq shouldBe (rangeStart until rangeLimit)
       }
 
     }
@@ -73,12 +74,14 @@ class BuildingStreamsSpec extends BaseSpec {
         val square = Flow[Int].map(v => Math.pow(v, squarePow).toInt)
         val sink = Sink.last[Int]
 
-        val result = source.via(square).toMat(sink)(Keep.right).run()
+        val materializedValue = source.via(square).toMat(sink)(Keep.right).run()
 
-        val lastSquare = Await.result(result, 1.seconds)
+        val lastSquare = awaitForResult(materializedValue)
 
         lastSquare shouldBe Math.pow(endRange, squarePow)
       }
+
+      val sumOfFirstNNumbers: Int => Int = n => (n * (n+1)) / 2
 
       "be manipulated controlling materialized values " in {
 
@@ -86,9 +89,11 @@ class BuildingStreamsSpec extends BaseSpec {
         val sum = Flow[Int].fold(0)((acc, value) => acc+value).zipWith(timedSource)(Keep.left)
         val sink = Sink.head[Int]
 
-        val result = source.viaMat(sum)(Keep.right).toMat(sink)(Keep.right).run()
+        val materializedValue = source.viaMat(sum)(Keep.right).toMat(sink)(Keep.right).run()
 
-        Await.result(result, 1.seconds) shouldBe (endRange * (endRange + 1) / 2)
+        val sumOfNumbersUntilEndRange = awaitForResult(materializedValue)
+
+        sumOfNumbersUntilEndRange shouldBe sumOfFirstNNumbers(endRange)
       }
 
     }
