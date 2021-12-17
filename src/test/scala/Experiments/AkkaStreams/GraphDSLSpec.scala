@@ -3,8 +3,6 @@ package Experiments.AkkaStreams
 import akka.stream.{ClosedShape, FlowShape, SourceShape}
 import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, Keep, Merge, RunnableGraph, Sink, Source, ZipWith}
 
-import scala.concurrent.Await
-import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
 class GraphDSLSpec extends BaseSpec {
@@ -113,7 +111,7 @@ class GraphDSLSpec extends BaseSpec {
           .toMat(Sink.head[Double])(Keep.right)
       }
 
-      val materializedValue = complexSource.viaMat(complexFlow)(Keep.right).toMat(complexSink)(Keep.right).run()
+      val materializedValue = complexSource.via(complexFlow).toMat(complexSink)(Keep.right).run()
       val resultOutOfPipe = awaitForResult(materializedValue)
 
       resultOutOfPipe shouldBe 0

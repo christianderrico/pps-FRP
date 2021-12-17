@@ -1,9 +1,5 @@
-package ReactiveMonix
+package Experiments.ReactiveMonix
 
-import monix.execution.Ack.Continue
-import monix.reactive.observables.ConnectableObservable
-
-import scala.concurrent.Future
 import scala.concurrent.duration.{DurationDouble, DurationInt}
 
 class HotObservableSpec extends BaseSpec {

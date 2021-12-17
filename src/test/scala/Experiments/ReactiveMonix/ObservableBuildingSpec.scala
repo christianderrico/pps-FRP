@@ -1,6 +1,6 @@
-package ReactiveMonix
+package Experiments.ReactiveMonix
 
-import ReactiveMonix.ObservableFactory.getStrictTimedSource
+import Experiments.ReactiveMonix.ObservableFactory.getStrictTimedSource
 import monix.eval.Task
 import monix.execution.Cancelable
 import monix.reactive.{Observable, OverflowStrategy}

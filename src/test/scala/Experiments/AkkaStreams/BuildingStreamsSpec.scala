@@ -89,7 +89,7 @@ class BuildingStreamsSpec extends BaseSpec {
         val sum = Flow[Int].fold(0)((acc, value) => acc+value).zipWith(timedSource)(Keep.left)
         val sink = Sink.head[Int]
 
-        val materializedValue = source.viaMat(sum)(Keep.right).toMat(sink)(Keep.right).run()
+        val materializedValue = source.viaMat(sum)(Keep.left).toMat(sink)(Keep.right).run()
 
         val sumOfNumbersUntilEndRange = awaitForResult(materializedValue)
 
@@ -99,7 +99,5 @@ class BuildingStreamsSpec extends BaseSpec {
     }
 
   }
-
-
 
 }

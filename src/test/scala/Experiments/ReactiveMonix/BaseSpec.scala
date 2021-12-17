@@ -1,8 +1,9 @@
-package ReactiveMonix
+package Experiments.ReactiveMonix
 
 import monix.execution.{Cancelable, Scheduler}
 import monix.reactive.observers.Subscriber
 import monix.reactive.{Observable, OverflowStrategy}
+import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AsyncWordSpec
 
@@ -11,16 +12,16 @@ import scala.concurrent.duration.FiniteDuration
 
 trait BaseSpec extends AsyncWordSpec with Matchers {
 
-  implicit val scheduler = Scheduler(super.executionContext)
+  protected implicit val scheduler: Scheduler = Scheduler(super.executionContext)
 
   def getFirstElem[A](source: Observable[A]): Future[A] = source.headL.runToFuture
 
   def getElementsFromSource[A](source: Observable[A]): Future[List[A]] = source.toListL.runToFuture
 
-  def checkCondition[A](expected: A => Boolean, obtained: Future[A]) =
+  def checkCondition[A](expected: A => Boolean, obtained: Future[A]): Future[Assertion] =
     obtained map(value => assert(expected(value)))
 
-  def checkResults[A](expected: A, obtained: Future[A]) =
+  def checkResults[A](expected: A, obtained: Future[A]): Future[Assertion] =
     obtained map(value => value should equal(expected))
 
 }

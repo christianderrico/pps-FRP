@@ -1,4 +1,4 @@
-package ReactiveMonix
+package Experiments.ReactiveMonix
 
 import monix.eval.Task
 
@@ -15,11 +15,11 @@ class ObservableOperatorsSpec extends BaseSpec {
 
       "manipulate data flows " in {
 
-        val obs = getRangeObservable(from = 0, to = 10).dump("1)")
-          .filter(_ % 2 == 0).dump("2)")
-          .map(_ * 2).dump("3)")
-          .scan(0L)((acc, next) => acc + next).dump("4)")
-          .bufferTumbling(5).dump("5)")
+        val obs = getRangeObservable(from = 0, to = 10).dump("elem)")
+          .filter(_ % 2 == 0).dump("filter)")
+          .map(_ * 2).dump("map)")
+          .scan(0L)((acc, next) => acc + next).dump("scan)")
+          .bufferTumbling(5).dump("buffer)")
 
         val result = getFirstElem(obs)
 
@@ -71,12 +71,18 @@ class ObservableOperatorsSpec extends BaseSpec {
 
       s"neatly concat $differentSources with buffering" in {
 
-        val concatObservable = sourceA.concatMap(v => sourceB.map(elem => (v, elem)))
+        val concatObservable = sourceA.concatMap(v1 => sourceB.map(v2 => (v1, v2)))
+
+        /*val concatObservable = for {
+          v1 <- sourceA;
+          v2 <- sourceB
+        } yield (v1, v2)*/
+
         val result = getElementsFromSource(concatObservable)
         val expectedResult = List((0, 5), (0, 6), (0, 7),
-          (1, 5), (1, 6), (1, 7),
-          (2, 5), (2, 6), (2, 7),
-          (3, 5), (3, 6), (3, 7))
+                                  (1, 5), (1, 6), (1, 7),
+                                  (2, 5), (2, 6), (2, 7),
+                                  (3, 5), (3, 6), (3, 7))
 
         checkResults(expectedResult, result)
       }
@@ -96,9 +102,9 @@ class ObservableOperatorsSpec extends BaseSpec {
         val mergedObservable = sourceA.mergeMap(v => sourceB.map(elem => (v, elem)))
         val result = getElementsFromSource(mergedObservable)
         val expectedResult = List((0, 5), (1, 5), (2, 5),
-          (0, 6), (3, 5), (1, 6),
-          (2, 6), (0, 7), (3, 6),
-          (1, 7), (2, 7), (3, 7))
+                                  (0, 6), (3, 5), (1, 6),
+                                  (2, 6), (0, 7), (3, 6),
+                                  (1, 7), (2, 7), (3, 7))
 
         checkResults(expectedResult, result)
       }

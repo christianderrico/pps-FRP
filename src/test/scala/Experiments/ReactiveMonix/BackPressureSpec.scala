@@ -1,4 +1,4 @@
-package ReactiveMonix
+package Experiments.ReactiveMonix
 
 import monix.execution.Ack.Continue
 import monix.execution.Cancelable
@@ -37,7 +37,7 @@ class BackPressureSpec extends BaseSpec {
           obsOfFail.subscribe(
             _ => Future(Continue),
             errorFn = e => {
-              producer.onNext(Some(e));
+              producer.onNext(Some(e))
               producer.onComplete()
             }
           )
