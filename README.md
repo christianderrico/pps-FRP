@@ -1,4 +1,4 @@
-# pps-FRP
+# PPS-FRP
 Studio e sperimentazione del paradigma Functional Reactive Programming in Scala
 
 ## Authors
