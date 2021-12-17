@@ -1,8 +1,9 @@
-package AkkaStreamsExamples
+package ReactiveGameOfLife.Akka
 
 import java.util.regex.Pattern
 
-import ReactiveGameOfLife.Model.GameOfLife.{Live, Board, Dead, Generation, GridDimensions, Position}
+import ReactiveGameOfLife.ReactiveMonix.Model.GameOfLife.{Board, Dead, Generation, GridDimensions, Live, Position}
+import ReactiveGameOfLife.ReactiveMonix.Model.UpdateOps.{applyGameOfLifeRulesBy, getNeighboursPositions, getNextGeneration}
 import akka.actor.ActorSystem
 import akka.stream.ClosedShape
 import akka.stream.scaladsl.{Broadcast, Concat, Flow, GraphDSL, RunnableGraph, Sink, Source, ZipWith}
@@ -54,7 +55,7 @@ object AkkaGameOfLife extends App {
 
       println("GENERATION: " + i.generationNumber)
 
-      Source(i.cells.toList.sortWith((first, second) => (first, second) match {
+      Source(i.world.toList.sortWith((first, second) => (first, second) match {
         case ((pos1, _), (pos2, _)) => compareTwoPositions(pos1, pos2)
       })).map {
         case (_, status) if status == Live => "#"
@@ -70,15 +71,13 @@ object AkkaGameOfLife extends App {
     val concat = b.add(Concat[Generation]())
     val firstGenInjector = Source.single(Generation(0, initialState))
 
-    import ReactiveGameOfLife.Model.UpdateOps._
-
     val doGeneration =
       Flow[Generation].flatMapConcat(previousGeneration =>
-        Source(previousGeneration.cells).flatMapConcat {
+        Source(previousGeneration.world).flatMapConcat {
           case (cellPosition, cellStatus) =>
             Source(getNeighboursPositions(cellPosition)(gridDimension)) //get all possible neighbours
               .fold(0)((nOfAliveNeigh, neighbourPosition) =>
-                nOfAliveNeigh + (if (previousGeneration.cells(neighbourPosition) == Live) 1 else 0))
+                nOfAliveNeigh + (if (previousGeneration.world(neighbourPosition) == Live) 1 else 0))
               .map(nOfAliveNeighbours => applyGameOfLifeRulesBy(nOfAliveNeighbours, cellStatus))
         }
           .grouped(gridDimension.rows * gridDimension.columns)

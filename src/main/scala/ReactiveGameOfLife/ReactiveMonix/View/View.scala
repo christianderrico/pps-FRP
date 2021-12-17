@@ -1,9 +1,9 @@
-package ReactiveGameOfLife.View
+package ReactiveGameOfLife.ReactiveMonix.View
 
 import java.awt.event.ActionEvent
 import java.awt._
 
-import ReactiveGameOfLife.Model.GameOfLife.GridDimensions
+import ReactiveGameOfLife.ReactiveMonix.Model.GameOfLife.GridDimensions
 import ReactiveGameOfLife.Utilities.Implicits.{Liftable, RichButton, RichTextField}
 import ReactiveGameOfLife.Utilities.swingScheduler
 import javax.swing.border.Border

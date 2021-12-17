@@ -1,13 +1,13 @@
-package ReactiveGameOfLife.Controller
+package ReactiveGameOfLife.ReactiveMonix.Controller
 
 import java.awt.Color
 
-import ReactiveGameOfLife.Model.GameOfLife.{Live, Board, Dead, Position, State}
-import ReactiveGameOfLife.Model.{GameOfLife, UpdateGameState}
-import ReactiveGameOfLife.Model.UpdateGameState.{ModelInput, StopRequest, UpdateRequest}
+import ReactiveGameOfLife.ReactiveMonix.Model.GameOfLife.{Board, Dead, Live, Position, State}
+import ReactiveGameOfLife.ReactiveMonix.Model.{GameOfLife, UpdateGameState}
+import ReactiveGameOfLife.ReactiveMonix.Model.UpdateGameState.{ModelInput, StopRequest, UpdateRequest}
+import ReactiveGameOfLife.ReactiveMonix.View.View
+import ReactiveGameOfLife.ReactiveMonix.View.View.{CycleComputationRequest, TURNED_OFF_CELLS_COLOR, TURNED_ON_CELLS_COLOR, Tile, ViewInput}
 import ReactiveGameOfLife.Utilities.Implicits.RichObservable
-import ReactiveGameOfLife.View.View
-import ReactiveGameOfLife.View.View._
 import javax.swing.JButton
 import monix.eval.Task
 import monix.reactive.Observable
@@ -90,7 +90,7 @@ object Controller {
     //Game of life gen is "adapted" for the view in order to be drawn
     implicit def modelToModelOnView(model: GameOfLife): ViewInput = new ViewInput {
       override val generationCount: Int = model.generationNumber
-      override val tiles: BoardToDraw = model.cells.map {
+      override val tiles: BoardToDraw = model.world.map {
         case (position: Position, status) => ((position.row, position.column), status: Color)
       }
     }

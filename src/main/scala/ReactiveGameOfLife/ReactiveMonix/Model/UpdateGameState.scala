@@ -1,6 +1,6 @@
-package ReactiveGameOfLife.Model
+package ReactiveGameOfLife.ReactiveMonix.Model
 
-import ReactiveGameOfLife.Model.GameOfLife.{Live, Dead, Generation, GridDimensions, Position, State}
+import ReactiveGameOfLife.ReactiveMonix.Model.GameOfLife.{Dead, Generation, GridDimensions, Live, Position, State}
 import monix.reactive.Observable
 
 /**
@@ -23,7 +23,7 @@ object UpdateGameState {
    * Computes next generation from the previous one according Game of Life's logics
    */
   private def update(currentGeneration: GameOfLife): Observable[GameOfLife] = {
-    def countIfAlive(position: Position): Int = currentGeneration.cells(position) match {
+    def countIfAlive(position: Position): Int = currentGeneration.world(position) match {
       case Live => 1
       case _ => 0
     }
@@ -31,7 +31,7 @@ object UpdateGameState {
     val rows = GameOfLife.gridDimensions.rows
     val columns = GameOfLife.gridDimensions.columns
 
-    Observable.fromIterable(currentGeneration.cells)
+    Observable.fromIterable(currentGeneration.world)
       .mergeMap {
         case (position, status) =>
           Observable.fromIterable(getNeighboursPositions(position)(GameOfLife.gridDimensions))
@@ -88,7 +88,7 @@ object UpdateOps {
   def getNextGeneration(previous: GameOfLife)(newCellsStatus: Seq[State]): Generation =
     Generation(
       previous.generationNumber + 1,
-      previous.cells.zip(newCellsStatus).map {
+      previous.world.zip(newCellsStatus).map {
         case ((previousPosition, _), newStatus) => previousPosition -> newStatus
       }.toMap
     )

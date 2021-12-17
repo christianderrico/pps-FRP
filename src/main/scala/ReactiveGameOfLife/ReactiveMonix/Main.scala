@@ -1,8 +1,8 @@
-package ReactiveGameOfLife
+package ReactiveGameOfLife.ReactiveMonix
 
-import ReactiveGameOfLife.Controller.Controller
-import ReactiveGameOfLife.Model.GameOfLife
-import ReactiveGameOfLife.View.View
+import ReactiveGameOfLife.ReactiveMonix.Controller.Controller
+import ReactiveGameOfLife.ReactiveMonix.Model.GameOfLife
+import ReactiveGameOfLife.ReactiveMonix.View.View
 import monix.execution.Scheduler
 
 import scala.concurrent.Await

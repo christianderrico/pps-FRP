@@ -1,6 +1,6 @@
-package ReactiveGameOfLife.Model
+package ReactiveGameOfLife.ReactiveMonix.Model
 
-import ReactiveGameOfLife.Model.GameOfLife.Board
+import ReactiveGameOfLife.ReactiveMonix.Model.GameOfLife.Board
 import cats.Eq
 
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
@@ -9,7 +9,7 @@ import scala.concurrent.duration.{DurationInt, FiniteDuration}
  * ADT that describes John Conway's game of Life: [[https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life]]
  */
 sealed trait GameOfLife {
-  def cells: Board
+  def world: Board
   def generationNumber: Int
 }
 
@@ -20,9 +20,9 @@ object GameOfLife {
    * Initial pattern constitutes the seed of the system. The first generation is created by applying game of life rules,
    * and every generation is a pure function of preceding one.
    * @param generationNumber progressive number of generation, which indicates number of evolution steps made from the first one.
-   * @param cells game of life universe as [[Board]]
+   * @param world game of life universe as [[Board]]
    */
-  case class Generation(generationNumber: Int, cells: Board) extends GameOfLife
+  case class Generation(generationNumber: Int, world: Board) extends GameOfLife
 
   /**
    * An alternative type class using to checks generations equality,
@@ -45,7 +45,7 @@ object GameOfLife {
    * - Any live cell with fewer than two live neighbours dies, as if by underpopulation.
    * - Any live cell with two or three live neighbours lives on to the next generation.
    * - Any live cell with more than three live neighbours dies, as if by overpopulation.
-   * - Any live cell with more than three live neighbours dies, as if by overpopulation.
+   * - Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction.
    */
   trait State
   case object Live extends State

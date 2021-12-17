@@ -1,4 +1,4 @@
-package ReactiveGameOfLife.View
+package ReactiveGameOfLife.ReactiveMonix.View
 
 import monix.eval.Task
 import monix.reactive.Observable
@@ -21,7 +21,7 @@ trait Scene[-Input, +Output] {
 
   /**
    * Gets controller's output and draws it
-   * @param input
+   * @param input view's input to be rendered
    * @return a Task wrapping IO computation
    */
   def render(input: Input): Task[Unit]
