@@ -4,7 +4,7 @@ Sono stati presi in considerazione due solution framework scala per il supporto 
 - `Reactive Monix`
 - `Akka Streams`
 
-Gli esperimenti condotti sono contenuti nella folder [test/scala/Experiments] e sono stati concepiti come Behavioral test di alcuni aspetti ritenuti più significativi durante l'esperienza maturata con tali tecnologie.
+Gli esperimenti condotti sono contenuti nella folder [[test/scala/Experiments]] e sono stati concepiti come Behavioral test di alcuni aspetti ritenuti più significativi durante l'esperienza maturata con tali tecnologie.
 
 È stata prodotta una mini-app per una simulazione dev-ops con FRP: una versione base del [John Conway's Game of Life](https://it.wikipedia.org/wiki/Gioco_della_vita)
 
