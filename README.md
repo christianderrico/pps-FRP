@@ -17,8 +17,8 @@ Il report del progetto è disponibile nella main directory del repository: `Repo
 
 ## Usage
 - Clone del repository
-- Monix Game Of Life cmd: `sbt "runMain ReactiveGameOfLife.ReactiveMonix.Main"`
-- Akka Game Of Life cmd: `sbt "runMain ReactiveGameOfLife.Akka.AkkaGameOfLife"`
+- Monix Game Of Life, cmd: `sbt "runMain ReactiveGameOfLife.ReactiveMonix.Main"`
+- Akka Game Of Life, cmd: `sbt "runMain ReactiveGameOfLife.Akka.AkkaGameOfLife"`
 
 ## Authors
 - Christian D'Errico ([christianderrico](https://github.com/christianderrico))
