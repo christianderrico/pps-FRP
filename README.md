@@ -13,7 +13,7 @@ Come mini-app che fornisse un esempio d'uso di dev-ops non banale, sono state pr
 - La versione `Reactive Monix` comprende una view che permette di visualizzare e manipolare l'evoluzione dell'automa e di avviare o arrestare la ciclica computazione delle generazioni: `main.scala.ReactiveGameOfLife.ReactiveMonix`
 - La versione `Akka Streams` risulta più minimale e avvia il calcolo delle iterazioni partendo da una configurazione iniziale random del world di gioco: `main.scala.ReactiveGameOfLife.Akka`
 
-Il report del progetto è disponibile nella main directory: `Report PPS_FRP`
+Il report del progetto è disponibile nella main directory del repository: `ReportPPS_FRP.pdf`
 
 ## Usage
 - Clone del repository
