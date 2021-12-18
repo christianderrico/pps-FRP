@@ -13,7 +13,9 @@ Come mini-app che fornisse un esempio d'uso di dev-ops non banale, sono state pr
 - La versione `Reactive Monix` comprende una view che permette di visualizzare e manipolare l'evoluzione dell'automa e di avviare o arrestare la ciclica computazione delle generazioni: `main.scala.ReactiveGameOfLife.ReactiveMonix`
 - La versione `Akka Streams` risulta più minimale e avvia il calcolo delle iterazioni partendo da una configurazione iniziale random del world di gioco: `main.scala.ReactiveGameOfLife.Akka`
 
-##Usage
+Il report del progetto è disponibile nella main directory: 
+
+## Usage
 - Clone del repository
 - Monix Game Of Life cmd: `sbt "runMain ReactiveGameOfLife.ReactiveMonix.Main"`
 - Akka Game Of Life cmd: `sbt "runMain ReactiveGameOfLife.Akka.AkkaGameOfLife"`
