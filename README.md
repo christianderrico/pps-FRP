@@ -1,7 +1,7 @@
 # PPS-FRP
 Studio e sperimentazione del paradigma Functional Reactive Programming in Scala.
 
-Sono stati presi in considerazione due solution framework scala per il supporto alla programmazione reattiva:
+Sono stati presi in considerazione due solution framework per il supporto alla programmazione reattiva:
 - `Reactive Monix`, [https://monix.io/docs/current/#monix-reactive](https://monix.io/docs/current/#monix-reactive)
 - `Akka Streams`, [https://doc.akka.io/docs/akka/current/stream/index.html](https://doc.akka.io/docs/akka/current/stream/stream-introduction.html)
 
