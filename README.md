@@ -2,8 +2,8 @@
 Studio e sperimentazione del paradigma Functional Reactive Programming in Scala.
 
 Sono stati presi in considerazione due solution framework scala per il supporto alla programmazione reattiva:
-- `Reactive Monix`
-- `Akka Streams`
+- `Reactive Monix`, [https://monix.io/docs/current/#monix-reactive](https://monix.io/docs/current/#monix-reactive)
+- `Akka Streams`, [https://doc.akka.io/docs/akka/current/stream/index.html](https://doc.akka.io/docs/akka/current/stream/stream-introduction.html)
 
 Gli esperimenti condotti sono stati concepiti come behavioral test di alcuni aspetti ritenuti più significativi durante l'esperienza maturata con tali tecnologie:
 - Reactive Monix: `test.scala.Experiments.ReactiveMonix`
